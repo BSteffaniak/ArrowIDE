@@ -1,0 +1,2 @@
+*Syntax color not updating when opening a new tab.
+*Files not opening quickly when opening them.

@@ -1,0 +1,63 @@
+Microsoft (R) Macro Assembler Version 6.14.8444		    03/20/13 07:11:30
+H:\GitHub\Workspace\ArrowWorkspace\asm\hello.asm	     Page 1 - 1
+
+
+				.model small
+				.stack 100h
+ 0000				.data
+ 0000 48 65 6C 6C 6F 2C		message db "Hello, world!", 0dh, 0ah, '$'
+       20 77 6F 72 6C 64
+       21 0D 0A 24
+
+ 0000				.code
+ 0000				main proc
+					mov	ax, @data
+H:\GitHub\Workspace\ArrowWorkspace\asm\hello.asm(8) : error A2006: undefined symbol : DGROUP
+ 0000  8E D8				mov	ds, ax
+					
+ 0002  B4 09				mov	ah, 9
+ 0004  BA 0000 R			mov	dx, offset message
+ 0007  CD 21				int	21h
+ 0009  B8 4C00				mov	ax, 4C00h
+ 000C  CD 21				int	21h
+ 000E				main endp
+				end main
+Microsoft (R) Macro Assembler Version 6.14.8444		    03/20/13 07:11:30
+H:\GitHub\Workspace\ArrowWorkspace\asm\hello.asm	     Symbols 2 - 1
+
+
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+STACK  . . . . . . . . . . . . .	16 Bit	 0100	  Para	  Stack	  'STACK'	 
+_DATA  . . . . . . . . . . . . .	16 Bit	 0010	  Word	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	16 Bit	 0019	  Word	  Public  'CODE'	
+
+
+Procedures,  parameters and locals:
+
+                N a m e                 Type     Value    Attr
+
+main . . . . . . . . . . . . . .	P Near	 0000	  _TEXT	Length= 0019 Public
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 0000h	 
+@DataSize  . . . . . . . . . . .	Number	 0000h	 
+@Interface . . . . . . . . . . .	Number	 0000h	 
+@Model . . . . . . . . . . . . .	Number	 0002h	 
+@code  . . . . . . . . . . . . .	Text   	 _TEXT
+@data  . . . . . . . . . . . . .	Text   	 DGROUP
+@fardata?  . . . . . . . . . . .	Text   	 FAR_BSS
+@fardata . . . . . . . . . . . .	Text   	 FAR_DATA
+@stack . . . . . . . . . . . . .	Text   	 DGROUP
+message  . . . . . . . . . . . .	Byte	 0000	  _DATA	
+
+	   1 Warnings
+	   1 Errors

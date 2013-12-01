@@ -1,0 +1,5 @@
+<language name="Rich Text Format" image="rtffileimage.png">
+	<extensions>
+		.rtf
+	</extensions>
+</language>

@@ -1,0 +1,41 @@
+<language name="Python" executable="true" compilable="false" image="pythonfileimage.png">
+	<extensions>
+		.py
+	</extensions>
+	
+	<methods color="40 40 220">
+		<previousChars>
+			
+		</previousChars>
+		<followingChars>
+			()
+		</followingChars>
+	</methods>
+	
+	<identifiers color="4 150 120">
+		<previousChars>
+			
+		</previousChars>
+		<followingChars>
+			=
+		</followingChars>
+	</identifiers>
+	
+	<comments color="40 140 0">
+		<singleLineStarts>
+			#
+		</singleLineStarts>
+		<multiLineStarts>
+			
+		</multiLineStarts>
+		<multiLineEnds>
+			
+		</multiLineEnds>
+	</comments>
+	
+	<keywords color="150 0 0">
+		and as assert break class continue def del elif else
+		except exec finally for from global if import in is
+		lambda not or pass raise return try while with yeild
+	</keywords>
+</language>

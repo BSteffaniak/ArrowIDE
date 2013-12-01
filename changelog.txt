@@ -1,0 +1,49 @@
+>v1.0.0
+* Fixed other stability bugs.
+
+>v0.9.0
+>+ New tab explorer.
+* Fixed other stability bugs.
+
+>v0.8.0
++ Added support for file associations.
++ Created installer for Windows.
++ Added ability to drag and drop text and files.
++ Added an icon to the executable.
++ Now opens files in a current instance of the IDE instead of creating a new one.
++ Added ability to force open a new window of the IDE by passing the argument '-nw'
++ Added ability to split a specific tab into its own window.
+>+ Added capability to create custom file syntax highlighting with XML.
+* Fixed unpredictability of the double-click tab to enlarge/shrink the CodeField.
+>* Improved the performance when editing files.
+* Now updates line numbers when navigating with the arrow keys.
+* Now updates line numbers when the page drags when selecting text
+* Now only updates the line numbers when it needs to.
+* Now warns you if you are trying to save a read-only file.
+>* Now warns you if you are trying to open a read-only file.
+>* Now warns you if you are trying to open a non-readable file.
+>* Now warns the user about unsaved files when trying to close the IDE.
+>* Fixed ghost tabs.
+>* Fixed the CodeField expansion on Linux and Mac.
+>* Now able to close tabs even if you are not in the specified tab.
+>* Fixed bug that made you switch tabs when you enlarge/shrink the CodeField.
+>* Fixed bug to where the Dropdown menu would disappear if you clicked it anywhere.
+* Fixed other stability bugs.
+
+v0.7.5
++ Added support for C language syntax highlighting.
++ Added background color for the console depicting the state (running/stopped).
++ Added support for remembering previously opened tab properties after exiting.
++ Added support for multiple monitor operations.
++ Deletes console log file after exit.
++ Added double-click file tab to enlarge/shrink the CodeField.
+- Removed the period character after line numbers.
+* Fixed removing syntax highlighting when switching from Language file to text file.
+* Only auto adds ending curly brace whenever it is needed.
+* Can only drag window with left click now.
+* Different method of rendering line numbers.
+* Different method of compiling java files.
+* Different method for console-program output.
+* Fixed the "Save as..." feature.
+* Different MenuBar header font size.
+* Fixed other stability bugs.

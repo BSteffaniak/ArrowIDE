@@ -1,0 +1,17 @@
+v0.7.5
++ Added support for C language syntax highlighting.
++ Added background color for the console depicting the state (running/stopped).
++ Added support for remembering previously opened tab properties after exiting.
++ Added support for multiple monitor operations.
++ Deletes console log file after exit.
++ Added double-click file tab to enlarge/shrink the CodeField.
+- Removed the period character after line numbers.
+* Fixed removing syntax highlighting when switching from Language file to text file.
+* Only auto adds ending curly brace whenever it is needed.
+* Can only drag window with left click now.
+* Different method of rendering line numbers.
+* Different method of compiling java files.
+* Different method for console-program output.
+* Fixed the "Save as..." feature.
+* Different MenuBar header font size.
+* Fixed other minute bugs.

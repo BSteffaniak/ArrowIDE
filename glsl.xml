@@ -1,0 +1,50 @@
+<language name="GLSL" executable="false" compilable="true" image="fileimage.png">
+	<extensions>
+		.vs .vert .fs .frag .shade .shad .sha
+	</extensions>
+	
+	<methods color="40 40 220">
+		<previousChars>
+			
+		</previousChars>
+		<followingChars>
+			()
+		</followingChars>
+	</methods>
+	
+	<identifiers color="4 150 120">
+		<previousChars>
+			
+		</previousChars>
+		<followingChars>
+			=
+		</followingChars>
+	</identifiers>
+	
+	<comments color="40 140 0">
+		<singleLineStarts>
+			//
+		</singleLineStarts>
+		<multiLineStarts>
+			/*
+		</multiLineStarts>
+		<multiLineEnds>
+			*/
+		</multiLineEnds>
+	</comments>
+	
+	<keywords color="150 0 0">
+		int float double vec2 vec3 vec4 mat2 mat3 mat4 void
+		varying attribute uniform sampler2D gl_FragColor
+		gl_Vertex gl_Normal gl_NormalMatrix gl_ModelViewMatrix
+		gl_ProjectionMatrix gl_ModelViewProjectionMatrix
+		gl_Position gl_TexCoord gl_MultiTexCoord0 gl_MultiTexCoord1
+		gl_MultiTexCoord2 gl_MultiTexCoord3 gl_MultiTexCoord4
+		gl_MultiTexCoord5 gl_MultiTexCoord6 gl_MultiTexCoord7
+		gl_lightModel if else for while
+	</keywords>
+	
+	<keywords color="180 180 0">
+		#version
+	</keywords>
+</language>

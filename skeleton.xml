@@ -1,0 +1,39 @@
+<language name="Skeleton" executable="false" compilable="false" image="fileimage.png">
+	<extensions>
+		.ext
+	</extensions>
+	
+	<methods color="40 40 220">
+		<previousChars>
+			
+		</previousChars>
+		<followingChars>
+			()
+		</followingChars>
+	</methods>
+	
+	<identifiers color="4 150 120">
+		<previousChars>
+			
+		</previousChars>
+		<followingChars>
+			=
+		</followingChars>
+	</identifiers>
+	
+	<comments color="40 140 0">
+		<singleLineStarts>
+			//
+		</singleLineStarts>
+		<multiLineStarts>
+			/*
+		</multiLineStarts>
+		<multiLineEnds>
+			*/
+		</multiLineEnds>
+	</comments>
+	
+	<keywords color="150 0 0">
+		keywords in the language separated by spaces
+	</keywords>
+</language>

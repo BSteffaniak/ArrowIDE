@@ -1,0 +1,5 @@
+<language name="Executable" image="exefileimage.png">
+	<extensions>
+		.exe
+	</extensions>
+</language>
