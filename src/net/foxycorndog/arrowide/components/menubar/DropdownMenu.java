@@ -6,6 +6,10 @@ import java.util.HashMap;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ControlEvent;
 import org.eclipse.swt.events.ControlListener;
+import org.eclipse.swt.events.FocusEvent;
+import org.eclipse.swt.events.FocusListener;
+import org.eclipse.swt.events.ShellEvent;
+import org.eclipse.swt.events.ShellListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
@@ -45,15 +49,28 @@ public class DropdownMenu
 	private HashMap<String, Composite>		composites;
 	private ArrayList<Composite>			separators;
 	private ArrayList<DropdownMenuListener>	listeners;
+	private ArrayList<DropdownMenu>			children;
 
 	private static int						staticId;
 	
-	public DropdownMenu(DropdownMenu parent)
+	private static final int				closeMenu = 12342349;
+	
+	private static final double				data;
+	
+	static
+	{
+		data = 32343.424234;
+	}
+	
+	public DropdownMenu(final Composite comp, DropdownMenu parent)
 	{
 		this.parent = parent;
 		
-		shell = new Shell(SWT.NO_TRIM | SWT.NO_FOCUS | SWT.ON_TOP);
+		shell = new Shell(comp.getShell(), SWT.NO_TRIM | SWT.NO_FOCUS | SWT.MODELESS);
+		shell.setData(data);
 		shell.setSize(0, 0);
+		shell.forceActive();
+		shell.forceFocus();
 		
 		selectionColor = new Color(Display.getDefault(), 200, 200, 200);
 		defaultColor   = new Color(Display.getDefault(), 234, 234, 234);
@@ -70,6 +87,7 @@ public class DropdownMenu
 		composites   = new HashMap<String, Composite>();
 		separators   = new ArrayList<Composite>();
 		listeners    = new ArrayList<DropdownMenuListener>();
+		children     = new ArrayList<DropdownMenu>();
 		
 		gc = new GC(shell);
 		
@@ -124,6 +142,8 @@ public class DropdownMenu
 				
 				if (event.type == SWT.MouseUp && event.button == 1)
 				{
+					closeMenu();
+					
 					for (int i = listeners.size() - 1; i >= 0; i--)
 					{
 						listeners.get(i).itemSelected(text);
@@ -150,22 +170,85 @@ public class DropdownMenu
 			
 			public void handleEvent(Event event)
 			{
-				++times;
-				
-				if (times > 1)
+				if (event.type == SWT.MouseDown)
 				{
-					if (isOpen())
-					{
-						close();
+					++times;
 					
-						times = 0;
+					boolean dontClose = false;
+					
+					if (times > 1)
+					{
+						if (isOpen())
+						{
+							if (event.widget instanceof Control)
+							{
+								Control cont  = (Control)event.widget;
+								
+								Shell   shell = cont.getShell();
+								
+								if (shell.getData() instanceof Double)
+								{
+									if ((Double)shell.getData() == data)
+									{
+										dontClose = true;
+									}
+								}
+							}
+							
+							if (!dontClose)
+							{
+								close();
+								
+								times = 0;
+							}
+						}
 					}
+				}
+				else if (event.type == closeMenu)
+				{
+					close();
+					
+					times = 0;
 				}
 			}
 		};
 		
 //		DISPLAY.addFilter(SWT.MouseUp, focusListener);
 		DISPLAY.addFilter(SWT.MouseDown, focusListener);
+		
+		comp.getShell().addControlListener(new ControlListener()
+		{
+			@Override
+			public void controlResized(ControlEvent e)
+			{
+				closeMenu();
+			}
+			
+			@Override
+			public void controlMoved(ControlEvent e)
+			{
+				closeMenu();
+			}
+		});
+		
+		if (parent != null)
+		{
+			parent.notifyParent(this);
+		}
+	}
+	
+	private void notifyParent(DropdownMenu menu)
+	{
+		children.add(menu);
+	}
+	
+	private void closeMenu()
+	{
+		Event e2 = new Event();
+		
+		e2.type = closeMenu;
+		
+		focusListener.handleEvent(e2);
 	}
 	
 	public void addMenuItem(String text, String id)
@@ -302,6 +385,11 @@ public class DropdownMenu
 	
 	public void close()
 	{
+		for (int i = 0; i < children.size(); i++)
+		{
+			children.get(i).closeMenu();
+		}
+		
 		resetColors();
 		
 		shell.setVisible(false);

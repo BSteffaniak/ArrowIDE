@@ -203,7 +203,7 @@ public class Menubar
 		
 		currentSize += textWidth + 10;
 		
-		DropdownMenu menu = new DropdownMenu(null);
+		DropdownMenu menu = new DropdownMenu(parent, null);
 		menu.addDropdownMenuListener(menuListener);
 		
 		menus.put(name, menu);
@@ -218,7 +218,7 @@ public class Menubar
 		
 		menu.addMenuItem(name, id);
 		
-		DropdownMenu newMenu = new DropdownMenu(menu);
+		DropdownMenu newMenu = new DropdownMenu(parent, menu);
 		newMenu.addDropdownMenuListener(menuListener);
 		
 		menus.put(id, newMenu);
