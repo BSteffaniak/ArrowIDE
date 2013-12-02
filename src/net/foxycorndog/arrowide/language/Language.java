@@ -219,6 +219,11 @@ public class Language
 	
 	public void compile(String fileLocation, String code, String outputLocation, PrintStream stream)
 	{
+		if (true)
+		{
+			throw new UnsupportedOperationException(getCompileError());
+		}
+		
 		if (fileLocation != null)
 		{
 			
