@@ -70,7 +70,7 @@ public class TitleBar
 		{
 			public void handleEvent(Event event)
 			{
-				if (event.type == SWT.MouseUp)
+				if (event.type == SWT.MouseUp && event.button == 1)
 				{
 					// If the click is still on the button.
 					if (event.x >= 0 && event.x < size && event.y >= 0 && event.y < size)
@@ -224,12 +224,15 @@ public class TitleBar
 						
 						Control item = (Control)e.widget;
 						
-						int offset = item.getSize().x / 2;
+						int offsetX = item.getSize().x / 2;
+						int offsetY = item.getSize().y / 2;
 						
-						parent.setLocation(MouseInfo.getPointerInfo().getLocation().x - offset, dy);
+						java.awt.Point loc = MouseInfo.getPointerInfo().getLocation();
 						
-						oldX = offset;
-						oldY = y;
+						parent.setLocation(loc.x - offsetX, loc.y - offsetY);
+						
+						oldX = offsetX;
+						oldY = offsetY;
 					}
 					else
 					{
