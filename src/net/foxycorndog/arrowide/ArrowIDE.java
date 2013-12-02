@@ -930,6 +930,8 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 				}
 				else if (toolItemName.equals("Compile"))
 				{
+					consoleField.setText("");
+					
 					if (fileLocation == null)
 					{
 						try
@@ -945,95 +947,81 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 					{
 						Language language = Language.getLanguageByExtension(fileLocation);
 						
-						if (language.canCompile())
-						{
-							try
-							{
-								saveFile(fileLocation);
-							}
-							catch (IOException e1)
-							{
-								e1.printStackTrace();
-							}
-					
-							consoleField.setText("");
-							
-							String outputLocation = FileUtils.getParentFolder(fileLocation) + "/";
-							
-							new File(outputLocation).mkdirs();
-							
-							try
-							{
-								consoleField.setText("");
-								
-								language.compile(fileLocation, codeField.getRawText(), outputLocation, consoleStream);
-							}
-							catch (UnsupportedOperationException e)
-							{
-								consoleStream.println(e.getMessage());
-							}
-						}
-						else
-						{
-							consoleStream.println(language.getCompileError());
-						}
-					}
-				}
-				else if (toolItemName.equals("Run"))
-				{
-					if (fileLocation == null)
-					{
 						try
 						{
 							saveFile(fileLocation);
 						}
-						catch (IOException e)
+						catch (IOException e1)
 						{
-							e.printStackTrace();
+							e1.printStackTrace();
 						}
-					}
-					else
-					{
+				
 						consoleField.setText("");
+						
+						String outputLocation = FileUtils.getParentFolder(fileLocation) + "/";
+						
+						new File(outputLocation).mkdirs();
 						
 						try
 						{
-							Language language = codeField.getLanguage();
-							
-							Program program = language.run(fileLocation, consoleStream, thisIDE);
-							programStarted(program);
-							
-							if (program != null)
-							{
-								for (int i = programs.size() - 1; i >= 0; i--)
-								{
-									Program p = programs.get(i);
-									
-									if (!p.isRunning())
-									{
-										consoleTabs.closeTab(p.getId());
-										
-										programs.remove(i);
-									}
-								}
-								
-								programs.add(program);
-								
-								int tabId = consoleTabs.addTab(program.getName());
-								
-								program.setId(tabId);
-								
-								consoleTabPrograms.put(tabId, program);
-								
-								setMainProgram(tabId);
-								
-								updateLayout();
-							}
+							language.compile(fileLocation, codeField.getRawText(), outputLocation, consoleStream);
 						}
 						catch (UnsupportedOperationException e)
 						{
 							consoleStream.println(e.getMessage());
 						}
+					}
+				}
+				else if (toolItemName.equals("Run"))
+				{
+					try
+					{
+						saveFile(fileLocation);
+					}
+					catch (IOException e)
+					{
+						e.printStackTrace();
+					}
+					
+					consoleField.setText("");
+					
+					try
+					{
+						Language language = codeField.getLanguage();
+						
+						Program program = language.run(fileLocation, consoleStream, thisIDE);
+						programStarted(program);
+						
+						if (program != null)
+						{
+							for (int i = programs.size() - 1; i >= 0; i--)
+							{
+								Program p = programs.get(i);
+								
+								if (!p.isRunning())
+								{
+									consoleTabs.closeTab(p.getId());
+									
+									programs.remove(i);
+								}
+							}
+							
+							programs.add(program);
+							
+							int tabId = consoleTabs.addTab(program.getName());
+							
+							program.setId(tabId);
+							
+							consoleTabPrograms.put(tabId, program);
+							
+							setMainProgram(tabId);
+							
+							updateLayout();
+						}
+					}
+					catch (UnsupportedOperationException e)
+					{
+						consoleStream.println(e.getMessage());
 					}
 				}
 			}
@@ -2336,7 +2324,7 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 		
 		String fileNames[] = dialog.getFileNames();
 		
-		for (int i = 0; i < fileNames.length; i ++)
+		for (int i = 0; i < fileNames.length; i++)
 		{
 			openFile(parent + fileNames[i]);
 		}
@@ -2594,6 +2582,36 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 	}
 	
 	/**
+	 * Check if the file at the specified location exists and if the
+	 * user would like to overwrite it.
+	 * 
+	 * @param location The location of the file to check.
+	 * @return True if the file exists and the user doesn't want to
+	 * 		overwrite it.
+	 */
+	private boolean checkOverwrite(String location)
+	{
+		if (!fileLocation.equals(location))
+		{
+			File f = new File(location);
+			
+			if (f.isFile())
+			{
+				OptionDialog saveDialog = new OptionDialog(window, "Overwrite?", "\"" + FileUtils.getFileName(location) + "\" already exists. Would you like to overwrite it?");
+				
+				String result = saveDialog.open();
+				
+				if (!result.equals("yes"))
+				{
+					return true;
+				}
+			}
+		}
+		
+		return false;
+	}
+	
+	/**
 	 * Saves a file located at the specified location.
 	 * 
 	 * @param location The location of the file to open.
@@ -2601,6 +2619,12 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 	 */
 	public void saveFile(String location) throws IOException
 	{
+		if (checkOverwrite(location))
+		{
+			return;
+		}
+		
+		// If no files are open.
 		if (fileLocation == null && location == null)
 		{
 			try
@@ -2661,6 +2685,11 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 			{
 				location = location.replace('\\', '/');
 				
+				if (checkOverwrite(location))
+				{
+					return;
+				}
+				
 				String tabLocation = getTab(location);
 				
 				if (tabLocation != null)
@@ -2701,6 +2730,9 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 							
 							fileCache.remove(oldLoc);
 							fileCacheSaved.remove(oldLoc);
+							
+							fileCache.put(location, codeField.getWritableText());
+							fileCacheSaved.put(location, true);
 							
 							String lastTabs = CONFIG_DATA.get("last.tabs");
 							
@@ -2861,91 +2893,95 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 		{
 			fileTabs.closeTab(tabFileIds.get(tabLocation));
 		}
-		
-		int     tabId  = tabFileIds.get(tabLocation);
-		
-		boolean cancel = false;
-		
-		if (source == fileTabs)
+		else
 		{
-			if (tabId == oldTabId2)
+			int     tabId  = tabFileIds.get(tabLocation);
+			
+			boolean cancel = false;
+			
+			if (source == fileTabs)
 			{
-				toggleCodeField = false;
-			}
-			
-			oldTabId2 = 0;
-			
-			int newId		= fileTabs.getSelection();
-			
-			String location = tabFileLocations.get(tabId);
-			String result	= null;
-	
-			boolean askSave	= false;
-			
-			if (fileCacheSaved.containsKey(location))
-			{
-				if (!fileCacheSaved.get(location))
+				if (tabId == oldTabId2)
 				{
-					askSave = true;
+					toggleCodeField = false;
 				}
-			}
-			else
-			{
-				if (!isCodeFieldEmpty())
-				{
-					askSave = true;
-				}
-			}
-			
-			if (askSave)
-			{
-				OptionDialog saveDialog = new OptionDialog(window, "Save?", "\"" + FileUtils.getFileName(location) + "\" has not been saved, would you like to save it?");
 				
-				result = saveDialog.open();
-			}
-			
-			if (result != null)
-			{
-				if (result.equals("yes"))
+				oldTabId2 = 0;
+				
+				int newId		= fileTabs.getSelection();
+				
+				String location = tabFileLocations.get(tabId);
+				String result	= null;
+		
+				boolean askSave	= false;
+				
+				if (fileCacheSaved.containsKey(location))
 				{
-					try
+					if (!fileCacheSaved.get(location))
 					{
-						saveFile(location);
+						askSave = true;
 					}
-					catch (IOException e)
-					{
-						e.printStackTrace();
-					}
-				}
-				else if (result.equals("no"))
-				{
-					setFileSaved(location, true);
 				}
 				else
 				{
-					cancel = true;
+					if (!isCodeFieldEmpty())
+					{
+						askSave = true;
+					}
+				}
+				
+				if (askSave)
+				{
+					OptionDialog saveDialog = new OptionDialog(window, "Save?", "\"" + FileUtils.getFileName(location) + "\" has not been saved, would you like to save it?");
+					
+					result = saveDialog.open();
+				}
+				
+				if (result != null)
+				{
+					if (result.equals("yes"))
+					{
+						try
+						{
+							saveFile(location);
+						}
+						catch (IOException e)
+						{
+							e.printStackTrace();
+						}
+					}
+					else if (result.equals("no"))
+					{
+						setFileSaved(location, true);
+					}
+					else
+					{
+						cancel = true;
+					}
+				}
+				else
+				{
+					cancel = askSave;
 				}
 			}
-			else
+			else if (source == consoleTabs)
 			{
-				cancel = askSave;
+				Program program = consoleTabPrograms.get(tabId);
+				
+				if (program.isRunning())
+				{
+					program.getProcess().destroy();
+				}
+				
+				removeProgram(program);
+				
+				resetMainProgram(tabId);
 			}
-		}
-		else if (source == consoleTabs)
-		{
-			Program program = consoleTabPrograms.get(tabId);
-			
-			if (program.isRunning())
-			{
-				program.getProcess().destroy();
-			}
-			
-			removeProgram(program);
-			
-			resetMainProgram(tabId);
+		
+			return !cancel;
 		}
 		
-		return !cancel;
+		return false;
 	}
 	
 	private boolean isTab(String location) throws IOException
@@ -3634,9 +3670,9 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 			
 			if (button == 1 && event.wasClicked())
 			{
-				if (!location.equals(fileLocation))
+				if (location != null)
 				{
-					if (location != null)
+					if (!location.equals(fileLocation))
 					{
 						try
 						{
