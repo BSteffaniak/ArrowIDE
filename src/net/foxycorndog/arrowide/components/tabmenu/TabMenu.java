@@ -12,6 +12,8 @@ import org.eclipse.swt.custom.CTabFolderEvent;
 import org.eclipse.swt.custom.CTabItem;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.MouseListener;
+import org.eclipse.swt.events.PaintEvent;
+import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Color;
@@ -26,6 +28,8 @@ import static net.foxycorndog.arrowide.ArrowIDE.PROPERTIES;
 
 public class TabMenu
 {
+	private boolean						checkingClose;
+	
 	private int							maxCharacters, maxWidth;
 	
 	private long						oldTime;
@@ -34,6 +38,7 @@ public class TabMenu
 
 	private CTabFolder					tabFolder, widthFolder;
 	
+	private CTabItem					firstItem;
 	private CTabItem					oldItem;
 
 	private TabMenu						thisObject;
@@ -91,22 +96,6 @@ public class TabMenu
 		maxCharacters = 20;
 		
 		thisObject    = this;
-		
-		tabFolder.addListener(SWT.MouseDown, new Listener()
-		{
-			public void handleEvent(Event event)
-			{
-				tabSelected(event, true);
-			}
-		});
-		
-		tabFolder.addListener(SWT.MouseUp, new Listener()
-		{
-			public void handleEvent(Event event)
-			{
-				tabSelected(event, false);
-			}
-		});
 		
 		tabFolder.addSelectionListener(new SelectionListener()
 		{
@@ -182,6 +171,41 @@ public class TabMenu
 			public void showList(CTabFolderEvent e)
 			{
 				
+			}
+		});
+		
+		tabFolder.addListener(SWT.MouseDown, new Listener()
+		{
+			public void handleEvent(Event event)
+			{
+				checkingClose = true;
+				
+				firstItem = tabFolder.getItem(new Point(event.x, event.y));
+				
+				tabFolder.notifyListeners(SWT.MouseUp, event);
+				
+				if (event.doit)
+				{
+					tabSelected(event, true);
+				}
+			}
+		});
+		
+		tabFolder.addListener(SWT.MouseUp, new Listener()
+		{
+			public void handleEvent(Event event)
+			{
+				if (!checkingClose)
+				{
+					CTabItem secondItem = tabFolder.getItem(new Point(event.x, event.y));
+					
+					if (firstItem.equals(secondItem))
+					{
+						tabSelected(event, false);
+					}
+				}
+					
+				checkingClose = false;
 			}
 		});
 		
