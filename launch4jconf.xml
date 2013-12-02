@@ -1,8 +1,8 @@
 <launch4jConfig>
   <dontWrapJar>false</dontWrapJar>
   <headerType>gui</headerType>
-  <jar>C:\Users\Braden Steffaniak\Documents\GitHub\Workspace\ArrowIDE\ArrowIDE.jar</jar>
-  <outfile>C:\Users\Braden Steffaniak\Documents\GitHub\Workspace\ArrowIDE\ArrowIDE.exe</outfile>
+  <jar>C:\Users\Braden Steffaniak\Documents\GitHub\ArrowIDE\ArrowIDE.jar</jar>
+  <outfile>C:\Users\Braden Steffaniak\Documents\GitHub\ArrowIDE\ArrowIDE.exe</outfile>
   <errTitle></errTitle>
   <cmdLine></cmdLine>
   <chdir></chdir>
@@ -12,7 +12,7 @@
   <customProcName>false</customProcName>
   <stayAlive>false</stayAlive>
   <manifest></manifest>
-  <icon>C:\Users\Braden Steffaniak\Documents\GitHub\Workspace\ArrowIDE\iconlarge.ico</icon>
+  <icon>C:\Users\Braden Steffaniak\Documents\GitHub\ArrowIDE\iconlarge.ico</icon>
   <jre>
     <path></path>
     <minVersion>1.6.0</minVersion>
