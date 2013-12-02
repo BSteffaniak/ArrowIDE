@@ -13,12 +13,12 @@ AppPublisher=FoxyCorndog
 DefaultDirName={pf}\ArrowIDE
 DefaultGroupName=ArrowIDE
 AllowNoIcons=yes
-OutputDir=C:\Users\Braden Steffaniak\Documents\GitHub\Workspace\ArrowIDE\installer
+OutputDir=C:\Users\Braden Steffaniak\Documents\GitHub\ArrowIDE\installer
 OutputBaseFilename=setupArrowIDE
 Compression=lzma
 SolidCompression=yes
 ChangesAssociations=yes
-SetupIconFile=C:\Users\Braden Steffaniak\Documents\GitHub\Workspace\ArrowIDE\iconlarge.ico
+SetupIconFile=C:\Users\Braden Steffaniak\Documents\GitHub\ArrowIDE\iconlarge.ico
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -46,9 +46,9 @@ Name: phpAssociation; Description: "Associate ""php"" extension"; GroupDescripti
 Name: php5Association; Description: "Associate ""php5"" extension"; GroupDescription: File extensions:
 
 [Files]
-Source: "C:\Users\Braden Steffaniak\Documents\GitHub\Workspace\ArrowIDE\ArrowIDE.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Users\Braden Steffaniak\Documents\GitHub\ArrowIDE\ArrowIDE.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Braden Steffaniak\Desktop\crap\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-;Source: "C:\Users\Braden Steffaniak\Documents\GitHub\Workspace\ArrowIDE\arrow.config"; DestDir: "{app}"; Flags: ignoreversion
+;Source: "C:\Users\Braden Steffaniak\Documents\GitHub\ArrowIDE\arrow.config"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
