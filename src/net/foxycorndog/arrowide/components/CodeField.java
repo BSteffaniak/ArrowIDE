@@ -605,8 +605,19 @@ public class CodeField extends StyledText
 		float width  = getWidth();
 		float height = getHeight();
 		
-		widthPercent  = width  / composite.getSize().x;
-		heightPercent = height / composite.getSize().y;
+		Point size = composite.getSize();
+		
+		float x = width  / size.x;
+		float y = height / size.y;
+		
+		if (x < 1 - 0.15f)
+		{
+			widthPercent = x;
+		}
+		if (y < 1 - 0.15f)
+		{
+			heightPercent = y;
+		}
 	}
 	
 	/**
@@ -614,8 +625,10 @@ public class CodeField extends StyledText
 	 */
 	private void updateSize()
 	{
-		int width  = Math.round(widthPercent * composite.getSize().x);
-		int height = Math.round(heightPercent * composite.getSize().y);
+		Point size = composite.getSize();
+		
+		int width  = Math.round(widthPercent * size.x);
+		int height = Math.round(heightPercent * size.y);
 		
 		setSize(width, height);
 	}
