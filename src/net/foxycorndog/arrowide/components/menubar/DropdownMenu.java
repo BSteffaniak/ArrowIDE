@@ -66,6 +66,8 @@ public class DropdownMenu
 	{
 		this.parent = parent;
 		
+		final DropdownMenu thisMenu = this;
+		
 		shell = new Shell(comp.getShell(), SWT.NO_TRIM | SWT.NO_FOCUS | SWT.MODELESS);
 		shell.setData(data);
 		shell.setSize(0, 0);
@@ -143,6 +145,15 @@ public class DropdownMenu
 				if (event.type == SWT.MouseUp && event.button == 1)
 				{
 					closeMenu();
+					
+					DropdownMenu parent = thisMenu;
+					
+					while (parent.getParent() != null)
+					{
+						parent = parent.getParent();
+					}
+					
+					parent.close();
 					
 					for (int i = listeners.size() - 1; i >= 0; i--)
 					{
