@@ -71,7 +71,7 @@ import net.foxycorndog.arrowide.file.FileUtils;
 import net.foxycorndog.arrowide.language.CompileOutput;
 import net.foxycorndog.arrowide.language.Language;
 import net.foxycorndog.arrowide.printer.TextPrinter;
-import net.foxycorndog.arrowide.xml.Reader;
+import net.foxycorndog.arrowide.xml.XMLReader;
 import net.foxycorndog.arrowide.xml.XMLItem;
 
 import org.eclipse.swt.SWT;
@@ -300,24 +300,33 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 	 */
 	static
 	{
-		if (PROPERTIES.get("os.name").equals("windows"))
-		{
-			dataLocation = System.getenv("AppData").replace('\\', '/') + "/.ArrowIDE/";
-		}
-		else if (PROPERTIES.get("os.name").equals("macosx"))
-		{
-			dataLocation = System.getProperty("user.home") + "/Library/Application Support/ArrowIDE/";
-		}
-		else if (PROPERTIES.get("os.name").equals("linux"))
-		{
-			dataLocation = "/opt/ArrowIDE/";
-		}
+		File debugFile = new File("arrowidedebug");
 		
-		File f = new File(dataLocation);
-		
-		if (!f.isDirectory())
+		if (debugFile.isFile())
 		{
-			f.mkdirs();
+			dataLocation = "";
+		}
+		else
+		{
+			if (PROPERTIES.get("os.name").equals("windows"))
+			{
+				dataLocation = System.getenv("AppData").replace('\\', '/') + "/.ArrowIDE/";
+			}
+			else if (PROPERTIES.get("os.name").equals("macosx"))
+			{
+				dataLocation = System.getProperty("user.home") + "/Library/Application Support/ArrowIDE/";
+			}
+			else if (PROPERTIES.get("os.name").equals("linux"))
+			{
+				dataLocation = "/opt/ArrowIDE/";
+			}
+			
+			File f = new File(dataLocation);
+			
+			if (!f.isDirectory())
+			{
+				f.mkdirs();
+			}
 		}
 		
 		PROPERTIES.put("data.location", dataLocation);
@@ -328,33 +337,42 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 	 */
 	static
 	{
-		if (PROPERTIES.get("os.name").equals("windows"))
+		File debugFile = new File("arrowidedebug");
+		
+		if (debugFile.isFile())
 		{
-			String programFiles = System.getenv("ProgramFiles");
-			
-			resourcesLocation = programFiles + " (x86)";
-			
-			if (new File(resourcesLocation).isDirectory())
-			{
-				resourcesLocation += "/ArrowIDE/";
-			}
-			else
-			{
-				resourcesLocation = programFiles + "/ArrowIDE/";
-			}
-			
-			if (new File(resourcesLocation).isDirectory() == false)
-			{
-				resourcesLocation = "";
-			}
+			resourcesLocation = "";
 		}
-		else if (PROPERTIES.get("os.name").equals("macosx"))
+		else
 		{
-			resourcesLocation = System.getProperty("user.home") + "/Library/Application Support/ArrowIDE/";
-		}
-		else if (PROPERTIES.get("os.name").equals("linux"))
-		{
-//			resourcesLocation = "/opt/ArrowIDE/";
+			if (PROPERTIES.get("os.name").equals("windows"))
+			{
+				String programFiles = System.getenv("ProgramFiles");
+				
+				resourcesLocation = programFiles + " (x86)";
+				
+				if (new File(resourcesLocation).isDirectory())
+				{
+					resourcesLocation += "/ArrowIDE/";
+				}
+				else
+				{
+					resourcesLocation = programFiles + "/ArrowIDE/";
+				}
+				
+				if (new File(resourcesLocation).isDirectory() == false)
+				{
+					resourcesLocation = "";
+				}
+			}
+			else if (PROPERTIES.get("os.name").equals("macosx"))
+			{
+				resourcesLocation = System.getProperty("user.home") + "/Library/Application Support/ArrowIDE/";
+			}
+			else if (PROPERTIES.get("os.name").equals("linux"))
+			{
+//				resourcesLocation = "/opt/ArrowIDE/";
+			}
 		}
 		
 		PROPERTIES.put("resources.location", resourcesLocation);
@@ -848,7 +866,7 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 				{
 					try
 					{
-						saveFile(null);
+						saveFile(fileLocation, true);
 					}
 					catch (IOException e)
 					{
@@ -964,6 +982,11 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 						
 						try
 						{
+							if (language == null)
+							{
+								throw new UnsupportedOperationException("ArrowIDE does not support the specified language.");
+							}
+							
 							language.compile(fileLocation, codeField.getRawText(), outputLocation, consoleStream);
 						}
 						catch (UnsupportedOperationException e)
@@ -989,34 +1012,41 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 					{
 						Language language = codeField.getLanguage();
 						
-						Program program = language.run(fileLocation, consoleStream, thisIDE);
-						programStarted(program);
-						
-						if (program != null)
+						if (language != null)
 						{
-							for (int i = programs.size() - 1; i >= 0; i--)
+							Program program = language.run(fileLocation, consoleStream, thisIDE);
+							programStarted(program);
+							
+							if (program != null)
 							{
-								Program p = programs.get(i);
-								
-								if (!p.isRunning())
+								for (int i = programs.size() - 1; i >= 0; i--)
 								{
-									consoleTabs.closeTab(p.getId());
+									Program p = programs.get(i);
 									
-									programs.remove(i);
+									if (!p.isRunning())
+									{
+										consoleTabs.closeTab(p.getId());
+										
+										programs.remove(i);
+									}
 								}
+								
+								programs.add(program);
+								
+								int tabId = consoleTabs.addTab(program.getName());
+								
+								program.setId(tabId);
+								
+								consoleTabPrograms.put(tabId, program);
+								
+								setMainProgram(tabId);
+								
+								updateLayout();
 							}
-							
-							programs.add(program);
-							
-							int tabId = consoleTabs.addTab(program.getName());
-							
-							program.setId(tabId);
-							
-							consoleTabPrograms.put(tabId, program);
-							
-							setMainProgram(tabId);
-							
-							updateLayout();
+						}
+						else
+						{
+							throw new UnsupportedOperationException("ArrowIDE does not support the specified language.");
 						}
 					}
 					catch (UnsupportedOperationException e)
@@ -2177,7 +2207,7 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 		{
 			if (!PROJECT_PROPERTIES.containsKey(propsLocation))
 			{
-				HashMap<String, XMLItem[]> map = Reader.read(propsLocation);
+				HashMap<String, XMLItem[]> map = XMLReader.read(propsLocation);
 				
 				PROJECT_PROPERTIES.put(propsLocation, map);
 			}
@@ -2186,7 +2216,7 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 		{
 			if (!PROJECT_CLASSPATHS.containsKey(cpLocation))
 			{
-				HashMap<String, XMLItem[]> map = Reader.read(cpLocation);
+				HashMap<String, XMLItem[]> map = XMLReader.read(cpLocation);
 				
 				PROJECT_CLASSPATHS.put(cpLocation, map);
 			}
@@ -2591,7 +2621,7 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 	 */
 	private boolean checkOverwrite(String location)
 	{
-		if (!fileLocation.equals(location))
+		if (location != null && !fileLocation.equals(location))
 		{
 			File f = new File(location);
 			
@@ -2610,7 +2640,7 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 		
 		return false;
 	}
-	
+
 	/**
 	 * Saves a file located at the specified location.
 	 * 
@@ -2618,6 +2648,18 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 	 * @throws IOException 
 	 */
 	public void saveFile(String location) throws IOException
+	{
+		saveFile(location, false);
+	}
+	
+	/**
+	 * Saves a file located at the specified location.
+	 * 
+	 * @param location The location of the file to open.
+	 * @param saveAs Whether or not to open a Save as dialog.
+	 * @throws IOException 
+	 */
+	public void saveFile(String location, boolean saveAs) throws IOException
 	{
 		if (checkOverwrite(location))
 		{
@@ -2646,8 +2688,9 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 		
 		String  oldLoc   = null;
 		boolean closeOld = false;
+		boolean untitled = location.startsWith("Untitled");
 		
-		if (location == null || location.startsWith("Untitled"))
+		if (saveAs || location == null || untitled)
 		{
 			boolean hasTab = tabFileIds.containsKey(fileLocation);
 			int     tabId  = 0;
@@ -2661,7 +2704,11 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 			
 			FileDialog dialog = null;
 			
-			if (fileLocation != null)
+			if (!untitled && location != null)
+			{
+				dialog = openSaveDialog(location);
+			}
+			else if (fileLocation != null)
 			{
 				dialog = openSaveDialog(fileLocation);
 			}
@@ -2692,7 +2739,7 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 				
 				String tabLocation = getTab(location);
 				
-				if (tabLocation != null)
+				if (tabLocation != null && !tabLocation.equals(fileLocation))
 				{
 					OptionDialog saveDialog = new OptionDialog(window, "Save?", "The file " + '"' + FileUtils.getFileName(location) + '"' + " is already open. Would you like to overwrite it?" );
 					
