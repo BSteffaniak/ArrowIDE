@@ -3,6 +3,10 @@
 
 >v0.9.0
 >+ New tab explorer.
+>+ Added find text ability.
+>+ Added find and replace text ability.
+>+ Added framework for custom plugins and languages.
+>- Old caret offset indicator at the top left of the window.
 * Fixed other stability bugs.
 
 >v0.8.0
@@ -15,19 +19,21 @@
 + Added ability to split a specific tab into its own window.
 >+ Added capability to create custom file syntax highlighting with XML.
 * Fixed unpredictability of the double-click tab to enlarge/shrink the CodeField.
->* Improved the performance when editing files.
+* Improved the performance when editing files.
 * Now updates line numbers when navigating with the arrow keys.
 * Now updates line numbers when the page drags when selecting text
 * Now only updates the line numbers when it needs to.
 * Now warns you if you are trying to save a read-only file.
->* Now warns you if you are trying to open a read-only file.
->* Now warns you if you are trying to open a non-readable file.
->* Now warns the user about unsaved files when trying to close the IDE.
->* Fixed ghost tabs.
+* Now warns the user about unsaved files when trying to close the IDE.
+* Fixed ghost tabs.
 >* Fixed the CodeField expansion on Linux and Mac.
->* Now able to close tabs even if you are not in the specified tab.
->* Fixed bug that made you switch tabs when you enlarge/shrink the CodeField.
->* Fixed bug to where the Dropdown menu would disappear if you clicked it anywhere.
+* Now able to close tabs even if you are not in the specified tab.
+* Fixed bug that made you switch tabs when you enlarge/shrink the CodeField.
+* Fixed stability of Dropdown menus.
+* Fixed the window from being above the top of the screen when restoring.
+* Fixed the window from freaking out whenever you resize it really small.
+* Window control buttons can now only be activated with the left mouse button.
+* The "Save as..." dialog now opens to the current file location if it exists.
 * Fixed other stability bugs.
 
 v0.7.5
