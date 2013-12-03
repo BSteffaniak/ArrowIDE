@@ -1,4 +1,4 @@
-<language name="Text" image="txtfileimage.png">
+<language name="Text" executable="false" compilable="true" image="txtfileimage.png">
 	<extensions>
 		.txt
 	</extensions>
