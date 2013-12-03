@@ -201,6 +201,7 @@ public class FileUtils
 	
 	public static String getParentFolder(String location)
 	{
+		location = location.replace('\\', '/');
 		location = removeEndingSlashes(location);
 		
 		int index = location.length() - 1;
