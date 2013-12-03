@@ -1,0 +1,5 @@
+<language name="XML" executable="false" compilable="false" image="fileimage.png">
+	<extensions>
+		.xml
+	</extensions>
+</language>
