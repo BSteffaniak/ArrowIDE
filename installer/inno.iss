@@ -18,7 +18,7 @@ OutputBaseFilename=setupArrowIDE
 Compression=lzma
 SolidCompression=yes
 ChangesAssociations=yes
-SetupIconFile=C:\Users\Braden Steffaniak\Documents\GitHub\ArrowIDE\iconlarge.ico
+SetupIconFile=C:\Users\Braden Steffaniak\Documents\GitHub\ArrowIDE\res\images\iconmedium.ico
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
