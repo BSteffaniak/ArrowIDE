@@ -392,6 +392,8 @@ public class CodeField extends StyledText
 	{
 		Rectangle bounds = super.getBounds();
 		
+//		System.out.println(lineNumberPanel.getSize());
+		
 		if (lineNumberPanel != null)
 		{
 			bounds.width += lineNumberPanel.getSize().x;
@@ -439,6 +441,11 @@ public class CodeField extends StyledText
 	private Point getSuperSize()
 	{
 		return super.getSize();
+	}
+	
+	public void setSize(Point size)
+	{
+		setBounds(getX(), getY(), size.x, size.y);
 	}
 	
 	/**
@@ -579,6 +586,7 @@ public class CodeField extends StyledText
 			{
 				lineNumberText.removeLineStyleListener(lineNumbers);
 				removeLineStyleListener(lineSpaces);
+				
 				lineNumberText.dispose();
 				lineNumberText = null;
 			}

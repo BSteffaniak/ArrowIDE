@@ -42,7 +42,9 @@ public abstract class FileStreamReader implements Runnable
         
         this.file = file;
         
-        directoryToWatch = Paths.get(file.getParent());
+        String parent = FileUtils.getParentFolder(file.getAbsolutePath());
+        
+        directoryToWatch = Paths.get(parent);
         watcherSvc = FileSystems.getDefault().newWatchService();
         watchKey = directoryToWatch.register(watcherSvc, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
         

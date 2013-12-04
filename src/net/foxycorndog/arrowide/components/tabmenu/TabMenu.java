@@ -366,9 +366,9 @@ public class TabMenu
 		tabIds.remove(item);
 		tabsText.remove(id);
 		
-		item.dispose();
-		
 		subtractWidth(item.getBounds().width);
+		
+		item.dispose();
 		
 		TabMenuEvent e = new TabMenuEvent(thisObject, new Point(0, 0), id, 0, false, false);
 		

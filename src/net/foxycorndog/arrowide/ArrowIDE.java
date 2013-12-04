@@ -105,8 +105,6 @@ import org.eclipse.swt.widgets.Monitor;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.opengl.GLContext;
 
-import sun.org.mozilla.javascript.internal.ast.IdeErrorReporter;
-
 /**
  * Main class for the ArrowIDE program.
  * 
@@ -371,7 +369,7 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 			}
 			else if (PROPERTIES.get("os.name").equals("linux"))
 			{
-//				resourcesLocation = "/opt/ArrowIDE/";
+				resourcesLocation = "/opt/ArrowIDE/";
 			}
 		}
 		

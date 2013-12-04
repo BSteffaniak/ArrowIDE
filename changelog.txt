@@ -26,7 +26,7 @@
 * Now warns you if you are trying to save a read-only file.
 * Now warns the user about unsaved files when trying to close the IDE.
 * Fixed ghost tabs.
->* Fixed the CodeField expansion on Linux and Mac.
+* Fixed the CodeField expansion on Linux and Mac.
 * Now able to close tabs even if you are not in the specified tab.
 * Fixed bug that made you switch tabs when you enlarge/shrink the CodeField.
 * Fixed stability of Dropdown menus.
@@ -34,6 +34,7 @@
 * Fixed the window from freaking out whenever you resize it really small.
 * Window control buttons can now only be activated with the left mouse button.
 * The "Save as..." dialog now opens to the current file location if it exists.
+>* Fixed the container sizers after resizing and expanding/shrinking the CodeField.
 * Fixed other stability bugs.
 
 v0.7.5
