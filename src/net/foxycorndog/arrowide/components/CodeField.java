@@ -38,6 +38,8 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
 
+import static net.foxycorndog.arrowide.ArrowIDE.DISPLAY;
+
 /**
  * Class that extends StyledText, but colors the text according
  * to the language.
@@ -83,6 +85,8 @@ public class CodeField extends StyledText
 	private LineNumberPanel								lineNumberPanel;
 	
 	private StyledText									lineNumberText;
+	
+	private StyleRange									keyword, method, comment, variable;
 
 	private Composite									composite;
 
@@ -127,15 +131,15 @@ public class CodeField extends StyledText
 		contentListeners   = new ArrayList<ContentListener>();
 		codeFieldListeners = new ArrayList<CodeFieldListener>();
 		
-		syntaxHighlighting = new LineStyleListener()
-	    {
-			public void lineGetStyle(LineStyleEvent event)
-			{
-				StyleRange styles[] = thisField.getStyles();
-				
-				event.styles = styles;
-			}
-	    };
+//		syntaxHighlighting = new LineStyleListener()
+//	    {
+//			public void lineGetStyle(LineStyleEvent event)
+//			{
+//				StyleRange styles[] = thisField.getStyles();
+//				System.out.println("ASdf");
+//				event.styles = styles;
+//			}
+//	    };
 	    
 	    syntaxUpdater = new Thread()
 		{
@@ -145,7 +149,7 @@ public class CodeField extends StyledText
 			}
 		};
 	    
-	    addLineStyleListener(syntaxHighlighting);
+//	    addLineStyleListener(syntaxHighlighting);
 		
 		setText("");
 		setBounds(new Rectangle(0, 0, 100, 100));
@@ -190,7 +194,9 @@ public class CodeField extends StyledText
 	    {
 			public void handleEvent(final Event e)
 			{
-				
+//				int off = getLastCharacterOnTheRight(getCaretOffset(), getText());
+//				
+//				System.out.println(getCaretOffset() + ": " + off + " : " + getText().charAt(getCaretOffset()) + " : " + getText().charAt(off) + "!");
 			}
 	    };
 	    
@@ -256,14 +262,14 @@ public class CodeField extends StyledText
 	    {
 			public void keyPressed(KeyEvent e)
 			{
-				if (isPrintable(e.character) || e.keyCode == 13 || e.keyCode == 127 || e.keyCode == SWT.BS || e.keyCode == SWT.CR || e.character == '\t')
+				if (isPrintable(e.character) || e.keyCode == 13 || e.keyCode == 127 || e.keyCode == SWT.BS || e.keyCode == SWT.CR || e.character == '\t' || e.character == '\b')
 				{
 					contentChanged();
 				}
 				
 				CodeFieldEvent event = new CodeFieldEvent(e.character, e.stateMask, e.keyCode, thisField);
 				
-				for (int i = codeFieldListeners.size() - 1; i >= 0; i --)
+				for (int i = codeFieldListeners.size() - 1; i >= 0; i--)
 				{
 					codeFieldListeners.get(i).keyPressed(event);
 				}
@@ -274,6 +280,13 @@ public class CodeField extends StyledText
 				
 			}
 	    });
+	    
+	    keyword  = new StyleRange();
+	    method   = new StyleRange();
+	    comment  = new StyleRange();
+	    variable = new StyleRange();
+	    
+//	    setRedraw(false);
 	}
 	
 	public void select()
@@ -287,9 +300,263 @@ public class CodeField extends StyledText
 //		});
 	}
 	
+	private int getFirstWhitespaceOnTheRight(int index, String text)
+	{
+		return getFirstWhitespace(index, text, 1);
+	}
+	
+	private int getFirstWhitespaceOnTheLeft(int index, String text)
+	{
+		return getFirstWhitespace(index, text, -1);
+	}
+	
+	private int getLastWhitespaceOnTheRight(int index, String text)
+	{
+		return getLastWhitespace(index, text, 1);
+	}
+	
+	private int getLastWhitespaceOnTheLeft(int index, String text)
+	{
+		return getLastWhitespace(index, text, -1);
+	}
+	
+	private int getFirstWhitespace(int index, String text, int stride)
+	{
+		return getFirstToken(index, text, stride, false);
+	}
+	
+	private int getLastWhitespace(int index, String text, int stride)
+	{
+		return getLastToken(index, text, stride, false);
+	}
+	
+	private int getFirstCharacterOnTheRight(int index, String text)
+	{
+		return getFirstCharacter(index, text, 1);
+	}
+	
+	private int getFirstCharacterOnTheLeft(int index, String text)
+	{
+		return getFirstCharacter(index, text, -1);
+	}
+	
+	private int getLastCharacterOnTheRight(int index, String text)
+	{
+		return getLastCharacter(index, text, 1);
+	}
+	
+	private int getLastCharacterOnTheLeft(int index, String text)
+	{
+		return getLastCharacter(index, text, -1);
+	}
+	
+	private int getFirstCharacter(int index, String text, int stride)
+	{
+		return getFirstToken(index, text, stride, true);
+	}
+	
+	private int getLastCharacter(int index, String text, int stride)
+	{
+		return getLastToken(index, text, stride, true);
+	}
+	
+	public int getFirstToken(int index, String text, int stride, boolean character)
+	{
+		char c = text.charAt(index);
+		
+		while (containsChar(whitespaceArray, c) == character && index + stride >= 0 && index + stride < text.length())
+		{
+			index += stride;
+			
+			c = text.charAt(index);
+		}
+		
+		if (containsChar(whitespaceArray, c) != character)
+		{
+			return index;
+		}
+		
+		return -1;
+	}
+	
+	private int getLastToken(int index, String text, int stride, boolean character)
+	{
+		index  = getFirstToken(index, text, stride, character);
+		
+		if (index <= -1)
+		{
+			return -1;
+		}
+		
+		char c = text.charAt(index);
+		
+		while (containsChar(whitespaceArray, c) != character && index + stride >= 0 && index + stride < text.length())
+		{
+			index += stride;
+			
+			c = text.charAt(index);
+		}
+		
+		index -= stride;
+		c      = text.charAt(index);
+		
+		if (containsChar(whitespaceArray, c) != character)
+		{
+			return index;
+		}
+		
+		return -1;
+	}
+	
+	private int checkAdjacent(int index, String word, String text)
+	{
+		int l = 0;
+		int r = 0;
+		int w = 0;
+		
+		// The left adjacent word start index.
+		if (index > 0)
+		{
+			l = getLastCharacterOnTheLeft(index - 1, text);
+			w = getFirstWhitespaceOnTheRight(index - 1, text);
+		}
+		
+		// The right adjacent word start index.
+		r = getFirstCharacterOnTheRight(index, text);
+		
+		if (l < 0)
+		{
+			l = 0;
+		}
+		
+		if (r < 0)
+		{
+			r = text.length() - 1;
+		}
+		
+		if (text.regionMatches(l, word, 0, word.length()) && l + word.length() >= w)
+		{
+			System.out.println(1);
+			return l;
+		}
+		else if (text.regionMatches(r, word, 0, word.length()) && w < r)
+		{
+			System.out.println(2);
+			return r;
+		}
+		
+		return -1;
+	}
+	
 	public void highlightSyntax()
 	{
+		String  text           = getText();
 		
+		boolean redraw         = false;
+		
+		int     i              = getCaretOffset();
+		int     numHighlighted = 0;
+		int     index          = -1;
+		
+		int     indices[]      = new int[2];
+		
+		String  keywords[]     = new String[] { "test", "pool" };
+		
+		if (language != null)
+		{
+			if (language.getKeywords().length > 0)keywords = language.getKeywords();//rm this 'if' stmt
+		}
+		
+		// Check to see if any keywords are around the current caret offset.
+		for (int j = 0; j < keywords.length && numHighlighted < 2; j++)
+		{
+			if ((index = checkAdjacent(i, keywords[j], text)) >= 0)
+			{
+				if (getStyleRangeAtOffset(index) == null)
+				{
+					keyword.start      = index;
+					keyword.length     = keywords[j].length();
+					keyword.foreground = new Color(DISPLAY, 255, 50, 50);
+					System.out.println(keyword);
+					setStyleRange(keyword);
+				}
+				System.out.println("KEYWORD " + index + ", " + keywords[j].length());
+				indices[numHighlighted++] = j;
+			}
+		}
+		
+		if (numHighlighted <= 0)
+		{
+			int l = 0;
+			int r = 0;
+			
+			if (getCaretOffset() > 0)
+			{
+				l = getFirstWhitespaceOnTheLeft(getCaretOffset() - 1, text) + 1;
+			}
+			
+			r = getLastCharacterOnTheRight(getCaretOffset(), text);
+			
+			if (l < 0)
+			{
+				l = 0;
+			}
+			
+			if (r < 0)
+			{
+				r = text.length() - 1;
+			}
+			
+			replaceStyleRanges(l, r - l + 1, new StyleRange[0]);
+		}
+		else if (numHighlighted <= 1)
+		{
+			int l  = 0;
+			int ml = 0;
+			int mr = 0;
+			int r  = 0;
+			
+			if (getCaretOffset() > 0)
+			{
+				l  = getLastCharacterOnTheLeft(getCaretOffset() - 1, text);
+				ml = getFirstWhitespaceOnTheRight(l, text) - 1;
+			}
+			
+			mr = getFirstCharacterOnTheRight(ml + 1, text);
+			r  = getLastCharacterOnTheRight(mr, text);
+			
+			if (l < 0)
+			{
+				l = 0;
+			}
+			
+			if (r < 0)
+			{
+				r = text.length() - 1;
+			}
+			System.out.println((int)text.charAt(getCaretOffset() - 1) + " " + (int)text.charAt(getCaretOffset() - 2) + " " + (int)text.charAt(getCaretOffset() - 3) + " " + (int)text.charAt(getCaretOffset() - 4));
+			System.out.println(l + " " + ml + " " + mr + " " + r + " : " + getCaretOffset());
+			if (getCaretOffset() > l && getCaretOffset() <= ml || getCaretOffset() >= mr && getCaretOffset() <= r)
+			{
+				
+			}
+			else if (text.regionMatches(l, keywords[indices[0]], 0, ml - l + 1))
+			{
+				System.out.println("r1");
+				replaceStyleRanges(mr, r - l + 1, new StyleRange[0]);
+			}
+			else
+			{
+				System.out.println("r2");
+				replaceStyleRanges(l, ml - l + 1, new StyleRange[0]);
+			}
+		}
+		System.out.println(numHighlighted);
+		
+		if (redraw)
+		{
+			refresh();
+		}
 	}
 	
 	private boolean containsChar(char chars[], char key)
@@ -353,7 +620,7 @@ public class CodeField extends StyledText
 	{
 		super.setText(text);
 		
-		redraw();
+		refresh();
 	}
 	
 	public String getRawText()
@@ -537,6 +804,21 @@ public class CodeField extends StyledText
 //		
 //		super.setSize(width, height);
 //	}
+	
+	public void refresh()
+	{
+		refresh(0, getCharCount(), false);
+	}
+	
+	public void refresh(int start, int length, boolean clearBackground)
+	{
+//		setRedraw(true);
+		
+		redrawRange(start, length, clearBackground);
+		
+//		setRedraw(true);
+//		setRedraw(false);
+	}
 	
 	public void paste()
 	{
