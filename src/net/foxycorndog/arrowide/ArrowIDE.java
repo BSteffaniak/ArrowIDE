@@ -2525,7 +2525,7 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 		}
 		else
 		{
-			codeField.highlightSyntax();
+			codeField.highlightAllSyntax();
 		}
 		
 		IllegalArgumentException e1 = null, e2 = null;

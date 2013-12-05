@@ -129,7 +129,9 @@ public class LineNumberPanel extends Composite
 		{
 			public void paintControl(PaintEvent e)
 			{
-				e.gc.drawImage(buffer, 0, -field.getTopPixel());
+				drawBuffer();
+				
+				e.gc.drawImage(buffer, 0, 0);
 				
 				e.gc.dispose();
 			}
@@ -195,15 +197,20 @@ public class LineNumberPanel extends Composite
 			postLength = postfix.length();
 		}
 		
-		int maxLength = preLength + String.valueOf(field.getLineCount()).length() + postLength;
+		int maxLength     = preLength + String.valueOf(field.getLineCount()).length() + postLength;
 		
-		for (int i = 0; i < field.getLineCount(); i++)
+		int contentHeight = (int)Math.ceil(field.getHeight() / (double)height);
+		int contentOffset = -(field.getTopPixel() % height);
+		
+		for (int i = 0; i < contentHeight; i++)
 		{
-			int length = preLength + String.valueOf((i + 1)).length() + postLength;
+			int lineNum = i + field.getTopIndex();
 			
-			int dif    = maxLength - length;
+			int length  = preLength + String.valueOf((lineNum + 1)).length() + postLength;
 			
-			bufferGC.drawString(prefix + (i + 1) + postfix, dif * charWidth + leftMargin, height * i + 1);
+			int dif     = maxLength - length;
+			
+			bufferGC.drawString(prefix + (lineNum + 1) + postfix, dif * charWidth + leftMargin, height * i + 1 + contentOffset);
 		}
 	}
 	
@@ -214,7 +221,7 @@ public class LineNumberPanel extends Composite
 			return;
 		}
 		
-		int height = Math.max(field.getLineCount() * getCharHeight(), getSize().y);
+		int height = getSize().y;//Math.max(field.getLineCount() * getCharHeight(), getSize().y);
 		
 		PaletteData palette = new PaletteData(0xFF , 0xFF00 , 0xFF0000);
 		ImageData data = new ImageData(getSize().x, height, 24, palette);

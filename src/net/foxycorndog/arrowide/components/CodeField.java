@@ -408,8 +408,13 @@ public class CodeField extends StyledText
 		return -1;
 	}
 	
-	private int checkAdjacent(int index, String word, String text)
+	private AdjacentWords checkAdjacent(int index, String text, String words[])
 	{
+		AdjacentWords adjacentWords = new AdjacentWords();
+		
+		adjacentWords.indices = new int[] { -1, -1 };
+		adjacentWords.words   = new String[2];
+		
 		int l = 0;
 		int r = 0;
 		int w = 0;
@@ -428,39 +433,51 @@ public class CodeField extends StyledText
 		{
 			l = 0;
 		}
-		
 		if (r < 0)
 		{
 			r = text.length() - 1;
 		}
 		
-		if (text.regionMatches(l, word, 0, word.length()) && l + word.length() >= w)
+		for (int i = 0; i < words.length; i++)
 		{
-			System.out.println(1);
-			return l;
-		}
-		else if (text.regionMatches(r, word, 0, word.length()) && w < r)
-		{
-			System.out.println(2);
-			return r;
+			String word = words[i];
+			
+			System.out.println(l + ", " + r + " " + text.charAt(l) + ", " + text.charAt(r));
+			
+			if (text.regionMatches(l, word, 0, word.length()) && l + word.length() >= w)
+			{
+				adjacentWords.indices[0] = l;
+				adjacentWords.words[0]   = word;
+			}
+			else if (text.regionMatches(r, word, 0, word.length()) && w < r)
+			{
+				adjacentWords.indices[1] = r;
+				adjacentWords.words[1]   = word;
+			}
 		}
 		
-		return -1;
+		if (adjacentWords.indices[0] < 0 && adjacentWords.indices[1] < 0)
+		{
+			return null;
+		}
+		
+		return adjacentWords;
 	}
 	
 	public void highlightSyntax()
 	{
-		String  text           = getText();
+		String text = getText();
 		
-		boolean redraw         = false;
-		
-		int     i              = getCaretOffset();
-		int     numHighlighted = 0;
-		int     index          = -1;
-		
-		int     indices[]      = new int[2];
+		highlightSyntax(getCaretOffset(), text);
+	}
+	
+	public void highlightSyntax(int caretOffset, String text)
+	{
+		int     i              = caretOffset;
 		
 		String  keywords[]     = new String[] { "test", "pool" };
+		
+		AdjacentWords index    = null;
 		
 		if (language != null)
 		{
@@ -468,40 +485,96 @@ public class CodeField extends StyledText
 		}
 		
 		// Check to see if any keywords are around the current caret offset.
-		for (int j = 0; j < keywords.length && numHighlighted < 2; j++)
+		index = checkAdjacent(i, text, keywords);
+		
+		if (index != null)
 		{
-			if ((index = checkAdjacent(i, keywords[j], text)) >= 0)
+			int indices[] = index.indices;
+			
+			for (int j = 0; j < indices.length; j++)
 			{
-				if (getStyleRangeAtOffset(index) == null)
+				int charIndex = indices[j];
+				
+				if (charIndex < 0)
 				{
-					keyword.start      = index;
-					keyword.length     = keywords[j].length();
+					continue;
+				}
+				
+				if (getStyleRangeAtOffset(charIndex) == null)
+				{
+					keyword.start      = charIndex;
+					keyword.length     = index.words[j].length();
 					keyword.foreground = new Color(DISPLAY, 255, 50, 50);
-					System.out.println(keyword);
+					
 					setStyleRange(keyword);
 				}
-				System.out.println("KEYWORD " + index + ", " + keywords[j].length());
-				indices[numHighlighted++] = j;
+				else
+				{
+					index.indices[j] = -1;
+					index.words[j]   = null;
+				}
+//				System.out.println("KEYWORD " + index);
+			}
+			
+			if (index.words[0] == null ^ index.words[1] == null)
+			{
+				int l  = 0;
+				int ml = 0;
+				int mr = 0;
+				int r  = 0;
+				
+				if (caretOffset > 0)
+				{
+					l  = getLastCharacterOnTheLeft(caretOffset - 1, text);
+					ml = getFirstWhitespaceOnTheRight(l, text) - 1;
+				}
+				
+				mr = getFirstCharacterOnTheRight(ml + 1, text);
+				r  = getLastCharacterOnTheRight(mr, text);
+				
+				if (l < 0)
+				{
+					l = 0;
+				}
+				
+				if (r < 0)
+				{
+					r = text.length() - 1;
+				}
+//				System.out.println((int)text.charAt(caretOffset - 1) + " " + (int)text.charAt(caretOffset - 2) + " " + (int)text.charAt(caretOffset - 3) + " " + (int)text.charAt(caretOffset - 4));
+//				System.out.println(l + " " + ml + " " + mr + " " + r + " : " + caretOffset);
+//				if (caretOffset > charIndex)
+//				{
+//					//
+//				}
+//				else if (text.regionMatches(l, keywords[indices[0]], 0, ml - l + 1))
+//				{
+//					System.out.println("r1");
+//					replaceStyleRanges(mr, r - l + 1, new StyleRange[0]);
+//				}
+//				else
+//				{
+//					System.out.println("r2");
+//					replaceStyleRanges(l, ml - l + 1, new StyleRange[0]);
+//				}
 			}
 		}
 		
-		if (numHighlighted <= 0)
+		if (index == null || index.isEmpty())
 		{
 			int l = 0;
 			int r = 0;
 			
-			if (getCaretOffset() > 0)
+			if (caretOffset > 0)
 			{
-				l = getFirstWhitespaceOnTheLeft(getCaretOffset() - 1, text) + 1;
+				l = getFirstWhitespaceOnTheLeft(caretOffset - 1, text) + 1;
+				r = getLastCharacterOnTheRight(caretOffset - 1, text);
 			}
-			
-			r = getLastCharacterOnTheRight(getCaretOffset(), text);
 			
 			if (l < 0)
 			{
 				l = 0;
 			}
-			
 			if (r < 0)
 			{
 				r = text.length() - 1;
@@ -509,53 +582,29 @@ public class CodeField extends StyledText
 			
 			replaceStyleRanges(l, r - l + 1, new StyleRange[0]);
 		}
-		else if (numHighlighted <= 1)
-		{
-			int l  = 0;
-			int ml = 0;
-			int mr = 0;
-			int r  = 0;
-			
-			if (getCaretOffset() > 0)
-			{
-				l  = getLastCharacterOnTheLeft(getCaretOffset() - 1, text);
-				ml = getFirstWhitespaceOnTheRight(l, text) - 1;
-			}
-			
-			mr = getFirstCharacterOnTheRight(ml + 1, text);
-			r  = getLastCharacterOnTheRight(mr, text);
-			
-			if (l < 0)
-			{
-				l = 0;
-			}
-			
-			if (r < 0)
-			{
-				r = text.length() - 1;
-			}
-			System.out.println((int)text.charAt(getCaretOffset() - 1) + " " + (int)text.charAt(getCaretOffset() - 2) + " " + (int)text.charAt(getCaretOffset() - 3) + " " + (int)text.charAt(getCaretOffset() - 4));
-			System.out.println(l + " " + ml + " " + mr + " " + r + " : " + getCaretOffset());
-			if (getCaretOffset() > l && getCaretOffset() <= ml || getCaretOffset() >= mr && getCaretOffset() <= r)
-			{
-				
-			}
-			else if (text.regionMatches(l, keywords[indices[0]], 0, ml - l + 1))
-			{
-				System.out.println("r1");
-				replaceStyleRanges(mr, r - l + 1, new StyleRange[0]);
-			}
-			else
-			{
-				System.out.println("r2");
-				replaceStyleRanges(l, ml - l + 1, new StyleRange[0]);
-			}
-		}
-		System.out.println(numHighlighted);
+	}
+	
+	public void highlightAllSyntax()
+	{
+		String text = getText();
 		
-		if (redraw)
+		int i = getFirstWhitespaceOnTheRight(0, text);
+		
+		while (i < text.length() - 1 && i > 0)
 		{
-			refresh();
+//			if (i < 1000)
+//			System.out.println(i + ", " + text.charAt(i));
+			
+			highlightSyntax(i, text);
+			
+			i = getFirstCharacterOnTheRight(i + 1, text);
+			
+			if (i < 0)
+			{
+				break;
+			}
+
+			i = getFirstWhitespaceOnTheRight(i + 1, text);
 		}
 	}
 	
@@ -921,5 +970,27 @@ public class CodeField extends StyledText
 		int height = Math.round(heightPercent * size.y);
 		
 		setSize(width, height);
+	}
+	
+	private class AdjacentWords
+	{
+		int		indices[];
+		
+		String	words[];
+		
+		public boolean isEmpty()
+		{
+			return indices == null || indices.length < 2 || indices[0] == -1 && indices[1] == -1;
+		}
+		
+		public String toString()
+		{
+			if (indices != null && words != null)
+			{
+				return "{ " + words[0] + ": " + indices[0] + ", " + words[1] + ": " + indices[1] + " }";
+			}
+			
+			return super.toString();
+		}
 	}
 }

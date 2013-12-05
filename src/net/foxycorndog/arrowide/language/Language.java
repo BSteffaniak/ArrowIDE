@@ -31,9 +31,9 @@ public class Language
 	
 //	public  static final int JAVA = FileUtils.JAVA, GLSL = FileUtils.GLSL, ASSEMBLY = FileUtils.ASSEMBLY, FOXY = FileUtils.FOXY, CPP = FileUtils.CPP, C = FileUtils.C, PHP = FileUtils.PHP, PYTHON = FileUtils.PYTHON;
 	
-	private static ArrayList<CompilerListener>				listeners;
+	private static ArrayList<CompilerListener>	listeners;
 	
-	private static HashMap<String, Language>				languages;
+	private static HashMap<String, Language>	languages;
 	
 	public static void init()
 	{
@@ -81,13 +81,22 @@ public class Language
 		{
 			String contents = items[i].getContents();
 			
-			contents = contents.replace("\n", "");
 			contents = contents.replace("\r", "");
+			contents = contents.replace("\n", " ");
 			contents = contents.replace("\t", "");
 			contents = contents.replace("  ", "");
 			contents = contents.replace("   ", "");
 			
 			String list[] = contents.split(" ");
+			
+			if (list[0].length() == 0)
+			{
+				String newList[] = new String[list.length - 1];
+				
+				System.arraycopy(list, 1, newList, 0, newList.length);
+				
+				list = newList;
+			}
 			
 			if (keywords.length == 0)
 			{
