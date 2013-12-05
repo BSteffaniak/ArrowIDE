@@ -167,6 +167,8 @@ public class Language
 		{
 			throw new UnsupportedOperationException(getCompileError());
 		}
+		
+		stream.println("Compiled successfully.");
 	}
 	
 	public static void addCompilerListener(CompilerListener listener)
