@@ -1536,6 +1536,11 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 			{
 				updateLayout();
 				
+				if (isCodeFieldExpanded())
+				{
+					setCodeFieldExpanded(true, false);
+				}
+				
 				if (!window.isMaximized() && !window.isFullscreen())
 				{
 					setConfigDataValue("window.width", window.getWidth() + "");
@@ -2474,7 +2479,7 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 			
 			while ((line = reader.readLine()) != null)
 			{
-				builder.append(line + "\r\n");
+				builder.append(line + "\n");
 			}
 			
 			reader.close();
@@ -2543,9 +2548,8 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 			e2 = e;
 		}
 		
-		
 		codeField.setFocus();
-		codeField.redraw();
+		codeField.refresh();
 		
 		if (e1 != null)
 		{
@@ -3821,16 +3825,29 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 		return oldCodeFieldHorizontalPercentage != -1;
 	}
 	
+	/**
+     * Set whether or not to expand the CodeField to fill, or release
+     * the remaining space.
+     * 
+     * @param expand If true, expand the CodeField to fill the remaining
+     * 		space. If false, release the remaining space.
+     */
+	private void setCodeFieldExpanded(boolean expand)
+	{
+		setCodeFieldExpanded(expand, true);
+	}
+	
     /**
      * Set whether or not to expand the CodeField to fill, or release
      * the remaining space.
      * 
      * @param expand If true, expand the CodeField to fill the remaining
-     *         space. If false, release the remaining space.
+     * 		space. If false, release the remaining space.
+     * @param editVariables Whether or not to set the old variable values.
      */
-	private void setCodeFieldExpanded(boolean expand)
+	private void setCodeFieldExpanded(boolean expand, boolean editVariables)
 	{
-		Point contentSize = window.getContentPanel().getSize();
+		Point contentSize = contentPanel.getSize();
 		
 		Point size = new Point(0, 0);
 		
@@ -3844,8 +3861,11 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 		
 		if (expand)
 		{
-			oldCodeFieldHorizontalPercentage = codeField.getWidth()  / (double)contentSize.x;
-			oldCodeFieldVerticalPercentage   = codeField.getHeight() / (double)contentSize.y;
+			if (editVariables)
+			{
+				oldCodeFieldHorizontalPercentage = codeField.getWidth()  / (double)contentSize.x;
+				oldCodeFieldVerticalPercentage   = codeField.getHeight() / (double)contentSize.y;
+			}
 			
 			codeField.setLocation(0, codeField.getY());
 			codeField.setSize(size);
