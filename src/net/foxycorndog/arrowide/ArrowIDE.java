@@ -885,7 +885,7 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 					FontData fd[] = codeField.getFont().getFontData().clone();
 					fd[0].setHeight(10);
 					
-					TextPrinter printer = new TextPrinter(data, codeField.getText(), new Font(display, fd[0]), codeField.getStyles());
+					TextPrinter printer = new TextPrinter(data, codeField.getText(), new Font(display, fd[0]), null);
 					printer.setMargins(1, 1, 1, 1);
 					
 					if (!printer.print())
@@ -1609,8 +1609,6 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 			
 			String location   = null;
 			
-			StringBuilder builder = new StringBuilder();
-			
 			for (int i = 0; i < lastTabs.length; i++)
 			{
 				if (lastTabs[i].length() <= 0)
@@ -1645,7 +1643,7 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 				
 				try
 				{
-					openFile(location, false, i == lastTabs.length - 1, selection, topPixel);
+					openFile(location, false, false, false, selection, topPixel);
 					
 //					builder.append(lastTabs[i] + ';');
 				}
@@ -1827,6 +1825,15 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 				
 				DISPLAY.sleep();
 			}
+		}
+		
+		try
+		{
+			ide.codeField.stopHighlighting();
+		}
+		catch (InterruptedException e1)
+		{
+			e1.printStackTrace();
 		}
 		
 		ide.updateTabsConfig();
@@ -2388,7 +2395,25 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 	 */
 	public void openFile(String location, boolean cache, boolean setLanguage) throws FileNotFoundException, IOException
 	{
-		openFile(location, cache, setLanguage, new Point(0, 0), 0);
+		openFile(location, cache, setLanguage, true);
+	}
+	
+	/**
+	 * Method that opens a file at the specified location and also
+	 * takes the option whether or not to cache the save the fileLocation
+	 * in the {@link #CONFIG_DATA} for reuse when the IDE is restarted.
+	 * 
+	 * @param	location The location of the file to open.
+	 * @param	cache Whether or not to save the file for use after restart.
+	 * @param 	setLanguage Whether or not to set the language of the codeField.
+	 * @param highlightLanguage whether or not to highlight the syntax of
+	 * 		the newly opened file.
+	 * @throws	FileNotFoundException Thrown if the file can not be found.
+	 * @throws	IOException Thrown if there was trouble reading or writing.
+	 */
+	public void openFile(String location, boolean cache, boolean setLanguage, boolean highlightLanguage) throws FileNotFoundException, IOException
+	{
+		openFile(location, cache, setLanguage, highlightLanguage, new Point(0, 0), 0);
 	}
 
 	/**
@@ -2399,12 +2424,16 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 	 * @param location The location of the file to open.
 	 * @param cache Whether or not to save the file for use after restart.
 	 * @param setLanguage Whether or not to set the language of the codeField.
+	 * @param highlightLanguage whether or not to highlight the syntax of
+	 * 		the newly opened file.
+	 * @param selection The Point at which to put the caret.
+	 * @param topPixel The value to set the top pixel as.
 	 * @throws FileNotFoundException Thrown if the file can not be found.
 	 * @throws IOException Thrown if there was trouble reading or writing.
 	 */
-	public void openFile(String location, boolean cache, boolean setLanguage, Point selection, int topPixel) throws FileNotFoundException, IOException, IllegalArgumentException
+	public void openFile(String location, boolean cache, boolean setLanguage, boolean highlightLanguage, Point selection, int topPixel) throws FileNotFoundException, IOException, IllegalArgumentException
 	{
-		openFile(location, cache, setLanguage, selection, topPixel, false);
+		openFile(location, cache, setLanguage, highlightLanguage, selection, topPixel, false);
 	}
 	
 	/**
@@ -2414,12 +2443,18 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 	 * 
 	 * @param location The location of the file to open.
 	 * @param cache Whether or not to save the file for use after restart.
-	 * @param setLanguage Whether or not to set the language of the codeField.
-	 * @param reOpen Whether or not t force reopening and refreshing the file.
+	 * @param setLanguage Whether or not to set the language of the
+	 * 		codeField.
+	 * @param highlightLanguage whether or not to highlight the syntax of
+	 * 		the newly opened file.
+	 * @param selection The Point at which to put the caret.
+	 * @param topPixel The value to set the top pixel as.
+	 * @param reOpen Whether or not t force reopening and refreshing the
+	 * 		file.
 	 * @throws FileNotFoundException Thrown if the file can not be found.
 	 * @throws IOException Thrown if there was trouble reading or writing.
 	 */
-	public void openFile(String location, boolean cache, boolean setLanguage, Point selection, int topPixel, boolean reOpen) throws FileNotFoundException, IOException, IllegalArgumentException
+	public void openFile(String location, boolean cache, boolean setLanguage, boolean highlightLanguage, Point selection, int topPixel, boolean reOpen) throws FileNotFoundException, IOException, IllegalArgumentException
 	{
 		location = location.replace('\\', '/');
 		
@@ -2487,7 +2522,6 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 			if (builder.length() > 0)
 			{
 				builder.deleteCharAt(builder.length() - 1);
-				builder.deleteCharAt(builder.length() - 1);
 			}
 			
 			String fileContents = builder.toString();
@@ -2521,9 +2555,9 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 		
 		if (setLanguage)
 		{
-			codeField.setLanguage(Language.getLanguageByExtension(location));
+			updateCodeFieldLanguage(location);
 		}
-		else
+		if (highlightLanguage && codeField.getLanguage() != null)
 		{
 			codeField.highlightAllSyntax();
 		}
@@ -2559,6 +2593,18 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 		{
 			throw e2;
 		}
+	}
+	
+	private void updateCodeFieldLanguage()
+	{
+		updateCodeFieldLanguage(fileLocation);
+	}
+	
+	private void updateCodeFieldLanguage(String location)
+	{
+		Language language = Language.getLanguageByExtension(location);
+		
+		codeField.setLanguage(language);
 	}
 	
 	/**
@@ -2884,7 +2930,7 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 			}
 			
 			closeTab(oldLoc, true, fileTabs);
-			openFile(location, true, true, selection, topPixel, true);
+			openFile(location, true, true, true, selection, topPixel, true);
 		}
 	}
 	
@@ -2938,8 +2984,18 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 	
 	private boolean closeTab(String tabLocation, boolean trigger, TabMenu source)
 	{
+		System.out.println("close");
 		if (trigger)
 		{
+			try
+			{
+				codeField.stopHighlighting();
+			}
+			catch (InterruptedException e)
+			{
+				e.printStackTrace();
+			}
+			
 			fileTabs.closeTab(tabFileIds.get(tabLocation));
 		}
 		else
@@ -3026,7 +3082,19 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 				
 				resetMainProgram(tabId);
 			}
-		
+			
+			if (!cancel)
+			{
+				try
+				{
+					codeField.stopHighlighting();
+				}
+				catch (InterruptedException e)
+				{
+					e.printStackTrace();
+				}
+			}
+			
 			return !cancel;
 		}
 		
@@ -3708,8 +3776,6 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 	 */
 	public void tabSelected(TabMenuEvent event)
 	{
-		boolean down = event.wasDown();
-		
 		int tabId    = event.getTabId();
 		int button   = event.getButton();
 		
@@ -3725,13 +3791,7 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 					{
 						try
 						{
-							openFile(location);
-						
-							codeField.setSelection(tabSelections.get(tabId));
-							codeField.setTopPixel(tabTopPixels.get(tabId));
-						
-							// Did not select the current tab content...
-							//codeField.select();
+							openFile(location, true, true, true, tabSelections.get(tabId), tabTopPixels.get(tabId));
 						}
 						catch (IOException e)
 						{
@@ -3775,15 +3835,18 @@ public class ArrowIDE implements ContentListener, CodeFieldListener, TabMenuList
 				{
 					try
 					{
-						openFile(location, true, true, tabSelections.get(tabId), tabTopPixels.get(tabId));
-					
-						// Did not select the current tab content...
-						//codeField.select();
+						openFile(location, true, true, true, tabSelections.get(tabId), tabTopPixels.get(tabId));
 					}
 					catch (IOException e)
 					{
 						e.printStackTrace();
 					}
+				}
+				else if (location.equals(fileLocation))
+				{
+					updateCodeFieldLanguage();
+					
+					codeField.highlightAllSyntax();
 				}
 			}
 		}
