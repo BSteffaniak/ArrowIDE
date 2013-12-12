@@ -56,6 +56,7 @@ public class CodeField extends StyledText
 	private boolean										isEscape;
 	private boolean										redrawReady;
 	private boolean										autoUpdate;
+	private volatile boolean							syntaxHighlighterRunning;
 
 	private char										textBeginning;
 
@@ -78,41 +79,42 @@ public class CodeField extends StyledText
 
 	private Listener									identifierSelectorListener;
 	
-	private Thread										syntaxUpdater;
+	private Thread										syntaxHighlighter, highlightWordThread, removeHighlightThread;
 
 	private LineStyleListener							lineNumbers, lineSpaces, syntaxHighlighting;
 	
 	private LineNumberPanel								lineNumberPanel;
 	
 	private StyledText									lineNumberText;
-	
-	private StyleRange									keyword, method, comment, variable;
 
 	private Composite									composite;
 
 	private CodeField									thisField;
 	
 	private Language									language;
-
-	private StyleRange									styles[];
+	
+	private StyleRange									keyword[], method[], comment[], identifier[];
 
 	// private ArrayList<ArrayList<Boolean>> tabs;
 
 	private ArrayList<ContentListener>					contentListeners;
 	private ArrayList<CodeFieldListener>				codeFieldListeners;
 	
+	private HashMap<String, Color>						colorCache;
+	
 	private static int									ids;
 
 	private static final String							whitespaceRegex;
 
-	private static final char							whitespaceArray[];
+	private static final char							whitespaceArray[], symbolArray[];
 	
 	static
 	{
 //		whitespaceRegex = "[.,[ ]/*=()\r\n\t\\[\\]{};[-][+]['][\"]:[-][+]><!]";
 		whitespaceRegex = "[.,[ ]/*=()\r\n\t[\\\\]\\[\\]{};[-][+]['][\"]:[-][+]><!]";
 		
-		whitespaceArray = new char[] { ' ', '.', ',', '/', '*', '=', '(', ')', '[', ']', '{', '}', ';', '\n', '\t', '\r', '-', '\\', '+', '\'', '"', ':', '-', '+', '>', '<', '!' };
+		whitespaceArray = new char[] { ' ', '\n', '\t', '\r' };
+		symbolArray     = new char[] { '.', ',', '/', '*', '=', '(', ')', '[', ']', '{', '}', ';', '-', '\\', '+', '\'', '"', ':', '-', '+', '>', '<', '!', '&', '|' };
 	}
 	
 	/**
@@ -131,6 +133,8 @@ public class CodeField extends StyledText
 		contentListeners   = new ArrayList<ContentListener>();
 		codeFieldListeners = new ArrayList<CodeFieldListener>();
 		
+		colorCache         = new HashMap<String, Color>();
+		
 //		syntaxHighlighting = new LineStyleListener()
 //	    {
 //			public void lineGetStyle(LineStyleEvent event)
@@ -141,7 +145,7 @@ public class CodeField extends StyledText
 //			}
 //	    };
 	    
-	    syntaxUpdater = new Thread()
+	    syntaxHighlighter = new Thread()
 		{
 			public void run()
 			{
@@ -194,6 +198,16 @@ public class CodeField extends StyledText
 	    {
 			public void handleEvent(final Event e)
 			{
+				highlightSyntax();
+				
+//				AdjacentWords o = getAdjacentWords(getCaretOffset(), getText());
+//				
+//				AdjacentWords a = filterAdjacentWords(getCaretOffset(), getText(), language.getKeywords(), o);
+//				
+//				System.out.println(a.words[0] + ", " + a.words[1]);
+				
+//				highlightSyntax();
+				
 //				int off = getLastCharacterOnTheRight(getCaretOffset(), getText());
 //				
 //				System.out.println(getCaretOffset() + ": " + off + " : " + getText().charAt(getCaretOffset()) + " : " + getText().charAt(off) + "!");
@@ -281,11 +295,6 @@ public class CodeField extends StyledText
 			}
 	    });
 	    
-	    keyword  = new StyleRange();
-	    method   = new StyleRange();
-	    comment  = new StyleRange();
-	    variable = new StyleRange();
-	    
 //	    setRedraw(false);
 	}
 	
@@ -298,6 +307,36 @@ public class CodeField extends StyledText
 				identifierSelectorListener.handleEvent(null);
 //			}
 //		});
+	}
+	
+	private int getFirstSymbolOnTheRight(int index, String text)
+	{
+		return getFirstSymbol(index, text, 1);
+	}
+	
+	private int getFirstSymbolOnTheLeft(int index, String text)
+	{
+		return getFirstSymbol(index, text, -1);
+	}
+	
+	private int getLastSymbolOnTheRight(int index, String text)
+	{
+		return getLastSymbol(index, text, 1);
+	}
+	
+	private int getLastSymbolOnTheLeft(int index, String text)
+	{
+		return getLastSymbol(index, text, -1);
+	}
+	
+	private int getFirstSymbol(int index, String text, int stride)
+	{
+		return getFirstToken(index, text, stride, true, symbolArray);
+	}
+	
+	private int getLastSymbol(int index, String text, int stride)
+	{
+		return getLastToken(index, text, stride, true, symbolArray);
 	}
 	
 	private int getFirstWhitespaceOnTheRight(int index, String text)
@@ -322,12 +361,12 @@ public class CodeField extends StyledText
 	
 	private int getFirstWhitespace(int index, String text, int stride)
 	{
-		return getFirstToken(index, text, stride, false);
+		return getFirstToken(index, text, stride, true, whitespaceArray);
 	}
 	
 	private int getLastWhitespace(int index, String text, int stride)
 	{
-		return getLastToken(index, text, stride, false);
+		return getLastToken(index, text, stride, true, whitespaceArray);
 	}
 	
 	private int getFirstCharacterOnTheRight(int index, String text)
@@ -352,26 +391,61 @@ public class CodeField extends StyledText
 	
 	private int getFirstCharacter(int index, String text, int stride)
 	{
-		return getFirstToken(index, text, stride, true);
+		return getFirstToken(index, text, stride, false, whitespaceArray, symbolArray);
 	}
 	
 	private int getLastCharacter(int index, String text, int stride)
 	{
-		return getLastToken(index, text, stride, true);
+		return getLastToken(index, text, stride, false, whitespaceArray, symbolArray);
 	}
 	
-	public int getFirstToken(int index, String text, int stride, boolean character)
+	private int getFirstSymbolspaceOnTheRight(int index, String text)
 	{
+		return getFirstSymbolspace(index, text, 1);
+	}
+	
+	private int getFirstSymbolspaceOnTheLeft(int index, String text)
+	{
+		return getFirstSymbolspace(index, text, -1);
+	}
+	
+	private int getLastSymbolspaceOnTheRight(int index, String text)
+	{
+		return getLastSymbolspace(index, text, 1);
+	}
+	
+	private int getLastSymbolspaceOnTheLeft(int index, String text)
+	{
+		return getLastSymbolspace(index, text, -1);
+	}
+	
+	private int getFirstSymbolspace(int index, String text, int stride)
+	{
+		return getFirstToken(index, text, stride, true, whitespaceArray, symbolArray);
+	}
+	
+	private int getLastSymbolspace(int index, String text, int stride)
+	{
+		return getLastToken(index, text, stride, true, whitespaceArray, symbolArray);
+	}
+	
+	private int getFirstToken(int index, String text, int stride, boolean checkFor, char[] ... tokenTypes)
+	{
+		if (index < 0 || index >= text.length())
+		{
+			return -1;
+		}
+		
 		char c = text.charAt(index);
 		
-		while (containsChar(whitespaceArray, c) == character && index + stride >= 0 && index + stride < text.length())
+		while (containsChar(c, tokenTypes) != checkFor && index + stride >= 0 && index + stride < text.length())
 		{
 			index += stride;
 			
 			c = text.charAt(index);
 		}
 		
-		if (containsChar(whitespaceArray, c) != character)
+		if (containsChar(c, tokenTypes) == checkFor)
 		{
 			return index;
 		}
@@ -379,20 +453,25 @@ public class CodeField extends StyledText
 		return -1;
 	}
 	
-	private int getLastToken(int index, String text, int stride, boolean character)
+	private int getLastToken(int index, String text, int stride, boolean checkFor, char[] ... tokenTypes)
 	{
-		index  = getFirstToken(index, text, stride, character);
+		index = getFirstToken(index, text, stride, checkFor, tokenTypes);
 		
-		if (index <= -1)
+		if (index < 0 || index >= text.length())
 		{
 			return -1;
 		}
 		
 		char c = text.charAt(index);
 		
-		while (containsChar(whitespaceArray, c) != character && index + stride >= 0 && index + stride < text.length())
+		while (containsChar(c, tokenTypes) == checkFor)
 		{
 			index += stride;
+			
+			if (index < 0 || index >= text.length())
+			{
+				break;
+			}
 			
 			c = text.charAt(index);
 		}
@@ -400,7 +479,7 @@ public class CodeField extends StyledText
 		index -= stride;
 		c      = text.charAt(index);
 		
-		if (containsChar(whitespaceArray, c) != character)
+		if (containsChar(c, tokenTypes) == checkFor)
 		{
 			return index;
 		}
@@ -408,60 +487,260 @@ public class CodeField extends StyledText
 		return -1;
 	}
 	
-	private AdjacentWords checkAdjacent(int index, String text, String words[])
+	private AdjacentWords getAdjacentWords(int index, String text)
 	{
 		AdjacentWords adjacentWords = new AdjacentWords();
 		
-		adjacentWords.indices = new int[] { -1, -1 };
-		adjacentWords.words   = new String[2];
-		
-		int l = 0;
-		int r = 0;
-		int w = 0;
-		
 		// The left adjacent word start index.
-		if (index > 0)
-		{
-			l = getLastCharacterOnTheLeft(index - 1, text);
-			w = getFirstWhitespaceOnTheRight(index - 1, text);
-		}
+		int l = getLastCharacterOnTheLeft(index, text);
 		
 		// The right adjacent word start index.
-		r = getFirstCharacterOnTheRight(index, text);
+		int r = getLastSymbolspaceOnTheRight(index, text) + 1;
 		
 		if (l < 0)
 		{
 			l = 0;
 		}
-		if (r < 0)
+		if (r > text.length() - 1)
 		{
-			r = text.length() - 1;
+			r = text.length();
 		}
 		
-		for (int i = 0; i < words.length; i++)
+		// The right whitespace -- see what I did there?
+		int rightspace = getLastCharacterOnTheRight(l, text);
+		
+		if (rightspace < 0 || rightspace > text.length())
 		{
-			String word = words[i];
-			
-			System.out.println(l + ", " + r + " " + text.charAt(l) + ", " + text.charAt(r));
-			
-			if (text.regionMatches(l, word, 0, word.length()) && l + word.length() >= w)
-			{
-				adjacentWords.indices[0] = l;
-				adjacentWords.words[0]   = word;
-			}
-			else if (text.regionMatches(r, word, 0, word.length()) && w < r)
-			{
-				adjacentWords.indices[1] = r;
-				adjacentWords.words[1]   = word;
-			}
+			rightspace = text.length() - 1;
 		}
 		
-		if (adjacentWords.indices[0] < 0 && adjacentWords.indices[1] < 0)
+		String word = text.substring(l, rightspace + 1);
+		
+		adjacentWords.indices[0] = l;
+		adjacentWords.words[0]   = word;
+		
+		// Check the word on the right now ...
+		rightspace = getLastCharacterOnTheRight(r, text);
+		
+		if (rightspace < 0 || rightspace > text.length())
 		{
-			return null;
+			rightspace = text.length() - 1;
+		}
+		
+		word = text.substring(r, rightspace + 1);
+		
+		// If the right word isn't the same as the left.
+		if (r != l)
+		{
+			adjacentWords.indices[1] = r;
+			adjacentWords.words[1]   = word;
 		}
 		
 		return adjacentWords;
+	}
+	
+	private AdjacentWords filterAdjacentWords(int index, int type, String words[][], AdjacentWords adjacentWords, String text)
+	{
+		return filterAdjacentWords(index, type, words, new String[0], new String[0], adjacentWords, text);
+	}
+
+	private AdjacentWords filterAdjacentWords(int index, int type, AdjacentWords adjacentWords, String text)
+	{
+		return filterAdjacentWords(index, type, new String[1][1], new String[0], new String[0], adjacentWords, text);
+	}
+
+	private AdjacentWords filterAdjacentWords(int index, int type, String prefix[], String postfix[], AdjacentWords adjacentWords, String text)
+	{
+		return filterAdjacentWords(index, type, new String[1][1], prefix, postfix, adjacentWords, text);
+	}
+	
+	private AdjacentWords filterAdjacentWords(int index, int type, String words[][], String prefix[], String postfix[], AdjacentWords adjacentWords, String text)
+	{
+		AdjacentWords aw = new AdjacentWords();
+		
+		for (int j = 0; j < words.length; j++)
+		{
+			for (int i = 0; i < words[j].length; i++)
+			{
+				String word = words[j][i];
+				
+				int typeIndex = j;
+				
+				checkWords(adjacentWords, aw, word, prefix, postfix, type, typeIndex, text);
+			}
+		}
+		
+		return aw;
+	}
+	
+	private char[] constrictArrayOnTheLeft(int index, char arrayAllowed[], char arrayConstraints[], String text)
+	{
+		return constrictArray(index, arrayAllowed, arrayConstraints, -1, text);
+	}
+	
+	private char[] constrictArrayOnTheRight(int index, char arrayAllowed[], char arrayConstraints[], String text)
+	{
+		return constrictArray(index, arrayAllowed, arrayConstraints, 1, text);
+	}
+	
+	private char[] constrictArray(int index, char arrayAllowed[], char arrayConstraints[], int stride, String text)
+	{
+		ArrayList<Character> chars = new ArrayList<Character>();
+		
+		char c = 0;
+		
+		boolean allowed   = false;
+		boolean constrict = false;
+		
+		do
+		{
+			c = text.charAt(index);
+			
+			allowed   = containsChar(c, arrayAllowed);
+			constrict = containsChar(c, arrayConstraints);
+			
+			if (allowed)
+			{
+				chars.add(c);
+			}
+			
+			index += stride;
+		}
+		while ((allowed || constrict) && index >= 0 && index < text.length());
+		
+		char array[] = new char[chars.size()];
+		
+		for (int i = chars.size() - 1; i >= 0; i--)
+		{
+			array[i] = chars.get(i);
+		}
+		
+		return array;
+	}
+	
+	private char[] reverse(char chars[])
+	{
+		char newArray[] = new char[chars.length];
+		
+		for (int i = 0; i < chars.length; i++)
+		{
+			newArray[i] = chars[chars.length - 1 - i];
+		}
+		
+		return newArray;
+	}
+	
+	private boolean isValid(String word, int index, String prefix[], String postfix[], String text)
+	{
+		if (index < 0)
+		{
+			return false;
+		}
+		
+		int i = getFirstSymbolOnTheLeft(index, text);
+		
+		if (i < 0)
+		{
+			// If a prefix was needed and it didn't have one.
+			if (prefix.length > 0)
+			{
+				return false;
+			}
+		}
+		else
+		{
+			char   chars[] = constrictArrayOnTheLeft(i, symbolArray, whitespaceArray, text);
+			
+			chars = reverse(chars);
+			
+			String str     = String.valueOf(chars);
+			
+			boolean hasPrefix = prefix.length <= 0;
+			
+			for (int j = 0; j < prefix.length; j++)
+			{
+				if (str.startsWith(prefix[j]))
+				{
+					hasPrefix = true;
+					
+					// Break out of the current loop.
+					break;
+				}
+			}
+			
+			if (!hasPrefix)
+			{
+				return false;
+			}
+		}
+		
+		i = getFirstSymbolOnTheRight(index + word.length(), text);
+		
+		if (i < 0)
+		{
+			if (postfix.length > 0)
+			{
+				return false;
+			}
+		}
+		else
+		{
+			char chars[] = constrictArrayOnTheRight(i, symbolArray, whitespaceArray, text);
+			
+			String str   = String.valueOf(chars);
+			
+			boolean hasPostfix = postfix.length <= 0;
+			
+			for (int j = 0; j < postfix.length; j++)
+			{
+				if (str.startsWith(postfix[j]))
+				{
+					hasPostfix = true;
+					
+					if (str.startsWith(";"))
+					{
+						System.out.println("asdf " + word);
+					}
+					
+					// Break out of the current loop.
+					break;
+				}
+			}
+			
+			if (!hasPostfix)
+			{
+				return false;
+			}
+		}
+		
+		return true;
+	}
+	
+	private void checkWords(AdjacentWords src, AdjacentWords dst, String word, String prefix[], String postfix[], int type, int typeIndex, String text)
+	{
+		for (int i = 0; i < src.words.length; i++)
+		{
+			if (word == null || word.equals(src.words[i]))
+			{
+				if (isValid(src.words[i], src.indices[i], prefix, postfix, text))
+				{
+					Color color = getColor(type, typeIndex);
+					
+					dst.indices[i]        = src.indices[i];
+					dst.words[i]          = src.words[i];
+					dst.typeIndices[i]    = typeIndex;
+					dst.types[i]          = type;
+					dst.colors[i]         = color;
+					
+					// If the words are at the same location, only do it once.
+					if (src.indices[0] == src.indices[1])
+					{
+						// Break out of the current loop.
+						break;
+					}
+				}
+			}
+		}
 	}
 	
 	public void highlightSyntax()
@@ -471,150 +750,285 @@ public class CodeField extends StyledText
 		highlightSyntax(getCaretOffset(), text);
 	}
 	
-	public void highlightSyntax(int caretOffset, String text)
+	public void highlightSyntax(final int caretOffset, final String text)
+	{
+		final AdjacentWords oldWords = getAdjacentWords(caretOffset, text);
+		final AdjacentWords metWords = getAdjacentMethods(caretOffset, text, oldWords);
+		final AdjacentWords idWords  = getAdjacentIdentifiers(caretOffset, text, oldWords);
+		final AdjacentWords newWords = getAdjacentKeywords(caretOffset, text, oldWords);
+		
+		metWords.merge(idWords);
+		newWords.merge(metWords);
+		
+		/* Highlight the words found, if any were.
+		 */
+		if (!newWords.isEmpty())
+		{
+			highlightWordThread = new Thread(new Runnable()
+			{
+				public void run()
+				{
+					for (int i = 0; i < newWords.indices.length; i++)
+					{
+						if (newWords.indices[i] < 0)
+						{
+							continue;
+						}
+						
+						if (getStyleRangeAtOffset(newWords.indices[i]) == null)
+						{
+							StyleRange range = null;
+							
+							int typeIndex    = newWords.typeIndices[i];
+							
+							if (newWords.types[i] == AdjacentWords.KEYWORD)
+							{
+								keyword[typeIndex].start      = newWords.indices[i];
+								keyword[typeIndex].length     = newWords.words[i].length();
+								keyword[typeIndex].foreground = newWords.colors[i];
+								
+								range = keyword[typeIndex];
+							}
+							else if (newWords.types[i] == AdjacentWords.METHOD)
+							{
+								method[typeIndex].start      = newWords.indices[i];
+								method[typeIndex].length     = newWords.words[i].length();
+								method[typeIndex].foreground = newWords.colors[i];
+								
+								range = method[typeIndex];
+							}
+							else if (newWords.types[i] == AdjacentWords.IDENTIFIER)
+							{
+								identifier[typeIndex].start      = newWords.indices[i];
+								identifier[typeIndex].length     = newWords.words[i].length();
+								identifier[typeIndex].foreground = newWords.colors[i];
+								
+								range = identifier[typeIndex];
+							}
+							
+							if (range != null)
+							{
+								setStyleRange(range);
+							}
+						}
+					}
+				}
+			}, "Highlight Word Thread");
+			
+			DISPLAY.syncExec(highlightWordThread);
+		}
+		
+		/* If we haven't already highlighted the words around us, look for
+		 * methods to highlight.
+		 */
+		if (!newWords.isFull())
+		{
+			removeHighlightThread = new Thread(new Runnable()
+			{
+				public void run()
+				{
+					for (int i = 0; i < newWords.indices.length; i++)
+					{
+						StyleRange range = null;
+						
+						int        index = oldWords.indices[i];
+						
+						if (index < 0 || index >= text.length()) continue;
+						if ((range = getStyleRangeAtOffset(index)) != null);
+						else if (index <= caretOffset && index + oldWords.words[i].length() > caretOffset && (range = getStyleRangeAtOffset(caretOffset)) != null);
+						else continue;
+						
+						if (newWords.words[i] == null && range != null)
+						{
+							replaceStyleRanges(range.start, oldWords.words[i].length(), new StyleRange[0]);
+						}
+					}
+				}
+			}, "Remove Highlight Thread");
+			
+			DISPLAY.syncExec(removeHighlightThread);
+		}
+	}
+	
+	private AdjacentWords getAdjacentKeywords(final int caretOffset, final String text)
+	{
+		final AdjacentWords oldWords = getAdjacentWords(caretOffset, text);
+		
+		return getAdjacentKeywords(caretOffset, text, oldWords);
+	}
+	
+	private AdjacentWords getAdjacentKeywords(final int caretOffset, final String text, final AdjacentWords oldWords)
 	{
 		int     i              = caretOffset;
 		
-		String  keywords[]     = new String[] { "test", "pool" };
-		
-		AdjacentWords index    = null;
-		
-		if (language != null)
-		{
-			if (language.getKeywords().length > 0)keywords = language.getKeywords();//rm this 'if' stmt
-		}
+		String  keywords[][]   = language.getKeywords();
 		
 		// Check to see if any keywords are around the current caret offset.
-		index = checkAdjacent(i, text, keywords);
+		AdjacentWords newWords = filterAdjacentWords(i, AdjacentWords.KEYWORD, keywords, oldWords, text);
 		
-		if (index != null)
-		{
-			int indices[] = index.indices;
-			
-			for (int j = 0; j < indices.length; j++)
-			{
-				int charIndex = indices[j];
-				
-				if (charIndex < 0)
-				{
-					continue;
-				}
-				
-				if (getStyleRangeAtOffset(charIndex) == null)
-				{
-					keyword.start      = charIndex;
-					keyword.length     = index.words[j].length();
-					keyword.foreground = new Color(DISPLAY, 255, 50, 50);
-					
-					setStyleRange(keyword);
-				}
-				else
-				{
-					index.indices[j] = -1;
-					index.words[j]   = null;
-				}
-//				System.out.println("KEYWORD " + index);
-			}
-			
-			if (index.words[0] == null ^ index.words[1] == null)
-			{
-				int l  = 0;
-				int ml = 0;
-				int mr = 0;
-				int r  = 0;
-				
-				if (caretOffset > 0)
-				{
-					l  = getLastCharacterOnTheLeft(caretOffset - 1, text);
-					ml = getFirstWhitespaceOnTheRight(l, text) - 1;
-				}
-				
-				mr = getFirstCharacterOnTheRight(ml + 1, text);
-				r  = getLastCharacterOnTheRight(mr, text);
-				
-				if (l < 0)
-				{
-					l = 0;
-				}
-				
-				if (r < 0)
-				{
-					r = text.length() - 1;
-				}
-//				System.out.println((int)text.charAt(caretOffset - 1) + " " + (int)text.charAt(caretOffset - 2) + " " + (int)text.charAt(caretOffset - 3) + " " + (int)text.charAt(caretOffset - 4));
-//				System.out.println(l + " " + ml + " " + mr + " " + r + " : " + caretOffset);
-//				if (caretOffset > charIndex)
-//				{
-//					//
-//				}
-//				else if (text.regionMatches(l, keywords[indices[0]], 0, ml - l + 1))
-//				{
-//					System.out.println("r1");
-//					replaceStyleRanges(mr, r - l + 1, new StyleRange[0]);
-//				}
-//				else
-//				{
-//					System.out.println("r2");
-//					replaceStyleRanges(l, ml - l + 1, new StyleRange[0]);
-//				}
-			}
-		}
+		return newWords;
+	}
+	
+	private AdjacentWords getAdjacentMethods(int caretOffset, String text)
+	{
+		AdjacentWords oldWords = getAdjacentWords(caretOffset, text);
 		
-		if (index == null || index.isEmpty())
-		{
-			int l = 0;
-			int r = 0;
-			
-			if (caretOffset > 0)
-			{
-				l = getFirstWhitespaceOnTheLeft(caretOffset - 1, text) + 1;
-				r = getLastCharacterOnTheRight(caretOffset - 1, text);
-			}
-			
-			if (l < 0)
-			{
-				l = 0;
-			}
-			if (r < 0)
-			{
-				r = text.length() - 1;
-			}
-			
-			replaceStyleRanges(l, r - l + 1, new StyleRange[0]);
-		}
+		return getAdjacentMethods(caretOffset, text, oldWords);
+	}
+	
+	private AdjacentWords getAdjacentMethods(int caretOffset, String text, final AdjacentWords oldWords)
+	{
+		int i = caretOffset;
+		
+		// Check to see if any keywords are around the current caret offset.
+		AdjacentWords newWords = filterAdjacentWords(i, AdjacentWords.METHOD, new String[0], new String[] { "(" }, oldWords, text);
+		
+		return newWords;
+	}
+	
+	private AdjacentWords getAdjacentIdentifiers(int caretOffset, String text)
+	{
+		AdjacentWords oldWords = getAdjacentWords(caretOffset, text);
+		
+		return getAdjacentIdentifiers(caretOffset, text, oldWords);
+	}
+	
+	private AdjacentWords getAdjacentIdentifiers(int caretOffset, String text, final AdjacentWords oldWords)
+	{
+		int i = caretOffset;
+		
+		// Check to see if any keywords are around the current caret offset.
+		AdjacentWords newWords = filterAdjacentWords(i, AdjacentWords.IDENTIFIER, new String[0], new String[] { ";", "=" }, oldWords, text);
+		
+		return newWords;
 	}
 	
 	public void highlightAllSyntax()
 	{
-		String text = getText();
-		
-		int i = getFirstWhitespaceOnTheRight(0, text);
-		
-		while (i < text.length() - 1 && i > 0)
+//		if (true)return;
+		if (language == null)
 		{
-//			if (i < 1000)
-//			System.out.println(i + ", " + text.charAt(i));
-			
-			highlightSyntax(i, text);
-			
-			i = getFirstCharacterOnTheRight(i + 1, text);
-			
-			if (i < 0)
-			{
-				break;
-			}
-
-			i = getFirstWhitespaceOnTheRight(i + 1, text);
+			return;
 		}
+		
+		final String text = getText();
+		
+		syntaxHighlighter = new Thread("Syntax Highlighter Thread")
+		{
+			public void run()
+			{
+				int i = getLastCharacterOnTheRight(0, text);
+				
+				while (i >= 0 && i < text.length() - 1 && syntaxHighlighterRunning)
+				{
+					highlightSyntax(i, text);
+					
+					i = getLastCharacterOnTheRight(i + 1, text);
+					
+					if (i < 0 || i >= text.length() - 1 || !syntaxHighlighterRunning)
+					{
+						break;
+					}
+					
+					i = getLastCharacterOnTheRight(i + 1, text);
+				}
+				
+				syntaxHighlighterRunning = false;
+				syntaxHighlighter        = null;
+			}
+		};
+		
+		syntaxHighlighterRunning = true;
+		
+		syntaxHighlighter.start();
 	}
 	
-	private boolean containsChar(char chars[], char key)
+	public void stopHighlighting() throws InterruptedException
+	{
+		if (syntaxHighlighter == null || highlightWordThread == null || removeHighlightThread == null)
+		{
+			return;
+		}
+		
+		syntaxHighlighterRunning = false;
+		
+		highlightWordThread.join();
+		removeHighlightThread.join();
+		syntaxHighlighter.join();
+	}
+	
+	private Color getColor(String color)
+	{
+		if (language == null)
+		{
+			return null;
+		}
+		
+		if (colorCache.containsKey(color))
+		{
+			return colorCache.get(color);
+		}
+		
+		String values[] = color.split(" ");
+		
+		int    rgb[]    = new int[3];
+		
+		for (int i = 0; i < rgb.length; i++)
+		{
+			if (values.length > i)
+			{
+				rgb[i] = Integer.valueOf(values[i]);
+			}
+			else
+			{
+				rgb[i] = rgb[i - 1];
+			}
+		}
+		
+		Color col = new Color(DISPLAY, rgb[0], rgb[1], rgb[2]);
+		
+		colorCache.put(color, col);
+		
+		return col;
+	}
+	
+	private Color getColor(int type, int keywordIndex)
+	{
+		if (language == null || keywordIndex < 0 || type < 1)
+		{
+			return null;
+		}
+		
+		String word = null;
+		
+		if (type == AdjacentWords.KEYWORD)
+		{
+			word = "keywords";
+		}
+		else if (type == AdjacentWords.METHOD)
+		{
+			word = "methods";
+		}
+		else if (type == AdjacentWords.IDENTIFIER)
+		{
+			word = "identifiers";
+		}
+		
+		String col = language.getAttribute("language." + word + ">color>" + keywordIndex);
+		
+		return getColor(col);
+	}
+	
+	private boolean containsChar(char key, char[] ... chars)
 	{
 		for (int i = 0; i < chars.length; i ++)
 		{
-			if (key == chars[i])
+			for (int j = 0; j < chars[i].length; j++)
 			{
-				return true;
+				if (key == chars[i][j])
+				{
+					return true;
+				}
 			}
 		}
 		
@@ -667,6 +1081,15 @@ public class CodeField extends StyledText
 	
 	public void setText(String text, boolean loaded, boolean parse)
 	{
+		try
+		{
+			stopHighlighting();
+		}
+		catch (InterruptedException e)
+		{
+			e.printStackTrace();
+		}
+		
 		super.setText(text);
 		
 		refresh();
@@ -829,9 +1252,39 @@ public class CodeField extends StyledText
 	
 	public void setLanguage(Language language)
 	{
-		this.language        = language;
+		this.language = language;
 		
-		highlightSyntax();
+		if (language == null)
+		{
+			return;
+		}
+		
+		int keywords    = language.getItems("language.keywords").length;
+		int methods     = language.getItems("language.methods").length;
+		int comments    = language.getItems("language.comments").length;
+		int identifiers = language.getItems("language.identifiers").length;
+		
+	    keyword    = new StyleRange[keywords];
+	    method     = new StyleRange[methods];
+	    comment    = new StyleRange[comments];
+	    identifier = new StyleRange[identifiers];
+	    
+	    for (int i = 0; i < keywords; i++)
+	    {
+	    	keyword[i] = new StyleRange();
+	    }
+	    for (int i = 0; i < methods; i++)
+	    {
+	    	method[i] = new StyleRange();
+	    }
+	    for (int i = 0; i < comments; i++)
+	    {
+	    	comment[i] = new StyleRange();
+	    }
+	    for (int i = 0; i < identifiers; i++)
+	    {
+	    	identifier[i] = new StyleRange();
+	    }
 	}
 	
 	public void addContentListener(ContentListener listener)
@@ -879,11 +1332,6 @@ public class CodeField extends StyledText
 		{
 			contentChanged();
 		}
-	}
-	
-	public StyleRange[] getStyles()
-	{
-		return styles;
 	}
 	
 	public void setShowLineNumbers(boolean show)
@@ -974,20 +1422,85 @@ public class CodeField extends StyledText
 	
 	private class AdjacentWords
 	{
-		int		indices[];
+		private int		indices[];
+		private int		typeIndices[];
+		private int		types[];
 		
-		String	words[];
+		private String	words[];
+		
+		private Color	colors[];
+		
+		public static final int KEYWORD = 1, METHOD = 2, IDENTIFIER = 3;
+		
+		public AdjacentWords()
+		{
+			indices     = new int[] { -1, -1 };
+			types       = new int[] { 0, 0 };
+			typeIndices = new int[2];
+			words       = new String[2];
+			colors      = new Color[2];
+		}
 		
 		public boolean isEmpty()
 		{
-			return indices == null || indices.length < 2 || indices[0] == -1 && indices[1] == -1;
+			return size() <= 0;
+		}
+		
+		public boolean isFull()
+		{
+			return size() >= 2;
+		}
+		
+		public void clear(int index)
+		{
+			indices[index]     = -1;
+			typeIndices[index] = -1;
+			types[index]       =  0;
+			words[index]       = null;
+			colors[index]      = null;
+		}
+		
+		public int size()
+		{
+			if (words == null)
+			{
+				return 0;
+			}
+			
+			int num = 0;
+			
+			if (words[0] != null)
+			{
+				++num;
+			}
+			if (words[1] != null)
+			{
+				++num;
+			}
+			
+			return num;
+		}
+		
+		public void merge(AdjacentWords target)
+		{
+			for (int i = 0; i < colors.length; i++)
+			{
+				if (target.colors[i] != null && colors[i] == null)
+				{
+					indices[i]     = target.indices[i];
+					typeIndices[i] = target.typeIndices[i];
+					types[i]       = target.types[i];
+					words[i]       = target.words[i];
+					colors[i]      = target.colors[i];
+				}
+			}
 		}
 		
 		public String toString()
 		{
 			if (indices != null && words != null)
 			{
-				return "{ " + words[0] + ": " + indices[0] + ", " + words[1] + ": " + indices[1] + " }";
+				return "{ " + words[0] + " at " + indices[0] + ", " + words[1] + " at " + indices[1] + " }";
 			}
 			
 			return super.toString();
