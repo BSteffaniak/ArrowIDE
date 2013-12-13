@@ -17,7 +17,7 @@
 + Now opens files in a current instance of the IDE instead of creating a new one.
 + Added ability to force open a new window of the IDE by passing the argument '-nw'
 + Added ability to split a specific tab into its own window.
->+ Added capability to create custom file syntax highlighting with XML.
++ Added capability to create custom file syntax highlighting with XML.
 * Fixed unpredictability of the double-click tab to enlarge/shrink the CodeField.
 * Improved the performance when editing files.
 * Now updates line numbers when navigating with the arrow keys.
