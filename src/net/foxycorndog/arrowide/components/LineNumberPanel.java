@@ -154,7 +154,9 @@ public class LineNumberPanel extends Composite
 			postLength = postfix.length();
 		}
 		
-		int length   = preLength + String.valueOf(field.getLineCount()).length() + postLength;
+		int width = Math.max(field.getLineCount(), (int)Math.ceil(field.getHeight() / field.getLineHeight()));
+		
+		int length   = preLength + String.valueOf(width).length() + postLength;
 		
 		int newWidth = length * getCharWidth() + leftMargin + rightMargin;
 		
@@ -196,21 +198,27 @@ public class LineNumberPanel extends Composite
 		{
 			postLength = postfix.length();
 		}
+
+		int width = Math.max(field.getLineCount(), (int)Math.ceil(field.getHeight() / field.getLineHeight()));
 		
-		int maxLength     = preLength + String.valueOf(field.getLineCount()).length() + postLength;
+		int maxLength     = preLength + String.valueOf(width).length() + postLength;
 		
 		int contentHeight = (int)Math.ceil(field.getHeight() / (double)height);
 		int contentOffset = -(field.getTopPixel() % height);
 		
 		for (int i = 0; i < contentHeight; i++)
 		{
-			int lineNum = i + field.getTopIndex();
+			int lineNum = i + field.getTopIndex() + 1;
 			
-			int length  = preLength + String.valueOf((lineNum + 1)).length() + postLength;
+			if (lineNum - 1 > field.getLineCount())
+			{
+				break;
+			}
 			
+			int length  = preLength + String.valueOf(lineNum).length() + postLength;
 			int dif     = maxLength - length;
 			
-			bufferGC.drawString(prefix + (lineNum + 1) + postfix, dif * charWidth + leftMargin, height * i + 1 + contentOffset);
+			bufferGC.drawString(prefix + lineNum + postfix, dif * charWidth + leftMargin, height * i + 1 + contentOffset);
 		}
 	}
 	
