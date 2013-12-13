@@ -39,7 +39,7 @@
 		</multiLineEnds>
 	</comments>
 	
-	<keywords color="150 0 0">
+	<keywords color="255 50 50">
 		as if else elseif while print class extends break
 		new return const var function throw try catch $this
 		self null true public static false protected switch

@@ -2,11 +2,11 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="/home/bradensteffaniak/Desktop/Workspace/org.eclipse.swt lin_64/swt.jar" sourcepath="/org.eclipse.swt win_64/src.zip">
+	<classpathentry kind="lib" path="C:/Users/Braden Steffaniak/Documents/GitHub/Workspace/org.eclipse.swt win_64/swt.jar" sourcepath="/org.eclipse.swt win_64/src.zip">
 		<attributes>
 			<attribute name="javadoc_location" value="http://help.eclipse.org/stable/nftopic/org.eclipse.platform.doc.isv/reference/api/"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="/home/bradensteffaniak/Desktop/Workspace/LWJGL/LWJGL/lwjgl-2.8.5/jar/lwjgl.jar"/>
+	<classpathentry kind="lib" path="/LWJGL/LWJGL/lwjgl-2.9.1/jar/lwjgl.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

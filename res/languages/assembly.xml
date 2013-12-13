@@ -33,7 +33,7 @@
 		</multiLineEnds>
 	</comments>
 	
-	<keywords color="150 0 0">
+	<keywords color="255 50 50">
 		int mov lea call sub rcx rsp rdx ecx eax db dd
 		dq jz jmp je jne include cmp rax shr rbx rsi rdi
 		org xor rep add ret edx jb

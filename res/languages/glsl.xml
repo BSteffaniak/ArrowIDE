@@ -33,7 +33,7 @@
 		</multiLineEnds>
 	</comments>
 	
-	<keywords color="150 0 0">
+	<keywords color="255 50 50">
 		int float double vec2 vec3 vec4 mat2 mat3 mat4 void
 		varying attribute uniform sampler2D gl_FragColor
 		gl_Vertex gl_Normal gl_NormalMatrix gl_ModelViewMatrix

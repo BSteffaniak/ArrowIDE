@@ -3,6 +3,8 @@
   <component name="EclipseModuleManager">
     <libelement value="file:///LWJGL/LWJGL/lwjgl-2.8.5/jar/lwjgl.jar" />
     <libelement value="jar://$MODULE_DIR$/../org.eclipse.swt win_64/swt.jar!/" />
+    <libelement value="jar://$MODULE_DIR$/../Workspace/org.eclipse.swt win_64/swt.jar!/" />
+    <libelement value="file:///LWJGL/LWJGL/lwjgl-2.9.1/jar/lwjgl.jar" />
     <src_description expected_position="0">
       <src_folder value="file://$MODULE_DIR$/src" expected_position="0" />
     </src_description>
@@ -16,18 +18,9 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="inheritedJdk" />
     <orderEntry type="module-library">
-      <library name="lwjgl.jar">
-        <CLASSES>
-          <root url="file:///LWJGL/LWJGL/lwjgl-2.8.5/jar/lwjgl.jar" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
       <library name="swt.jar">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../org.eclipse.swt win_64/swt.jar!/" />
+          <root url="jar://$MODULE_DIR$/../Workspace/org.eclipse.swt win_64/swt.jar!/" />
         </CLASSES>
         <JAVADOC>
           <root url="http://help.eclipse.org/stable/nftopic/org.eclipse.platform.doc.isv/reference/api/" />
@@ -39,17 +32,11 @@
     </orderEntry>
     <orderEntry type="module-library">
       <library>
-        <CLASSES />
-        <JAVADOC>
-          <root url="file://$MODULE_DIR$/../LWJGL/LWJGL/lwjgl-2.8.3/doc/docs/javadoc" />
-          <root url="file://$MODULE_DIR$/../LWJGL/LWJGL/lwjgl-2.8.5/doc/javadoc" />
-          <root url="file://$MODULE_DIR$/../LWJGL/LWJGL/lwjgl-2.9.0/doc/javadoc" />
-        </JAVADOC>
-        <SOURCES>
-          <root url="file://$MODULE_DIR$/../LWJGL/LWJGL/lwjgl-2.8.5/src/java" />
-          <root url="file://$MODULE_DIR$/../LWJGL/LWJGL/lwjgl-2.8.5/src/generated" />
-          <root url="file://$MODULE_DIR$/../LWJGL/LWJGL/lwjgl-2.8.5/src/templates" />
-        </SOURCES>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../Workspace/LWJGL/LWJGL/lwjgl-2.9.1/jar/lwjgl.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
       </library>
     </orderEntry>
   </component>

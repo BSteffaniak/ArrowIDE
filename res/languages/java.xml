@@ -12,7 +12,7 @@
 		</followingChars>
 	</methods>
 	
-	<identifiers color="4 150 120">
+	<identifiers color="44 190 160">
 		<previousChars>
 			
 		</previousChars>
@@ -33,7 +33,7 @@
 		</multiLineEnds>
 	</comments>
 	
-	<keywords color="150 0 0">
+	<keywords color="255 50 50">
 		abstract assert boolean break byte case catch
 		char class const continue default do double else
 		enum extends false final finally float for goto
