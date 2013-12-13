@@ -25,7 +25,7 @@ public class Language
 {
 	private Image						image;
 	
-	private String						keywords[];
+	private String						keywords[][];
 	
 	private HashMap<String, XMLItem[]>	properties;
 	
@@ -73,9 +73,9 @@ public class Language
 	{
 		properties = XMLReader.read(xmlLocation);
 		
-		keywords = new String[0];
-		
 		XMLItem items[] = getItems("language.keywords");
+		
+		keywords = new String[items.length][];
 
 		for (int i = 0; i < items.length; i++)
 		{
@@ -98,19 +98,19 @@ public class Language
 				list = newList;
 			}
 			
-			if (keywords.length == 0)
-			{
-				keywords = list;
-			}
-			else
-			{
-				String newKeywords[] = new String[keywords.length + list.length];
-
-				System.arraycopy(keywords, 0, newKeywords, 0, keywords.length);
-				System.arraycopy(list, 0, newKeywords, keywords.length, list.length);
-				
-				keywords = newKeywords;
-			}
+//			if (keywords.length == 0)
+//			{
+				keywords[i] = list;
+//			}
+//			else
+//			{
+//				String newKeywords[] = new String[keywords.length + list.length];
+//
+//				System.arraycopy(keywords, 0, newKeywords, 0, keywords.length);
+//				System.arraycopy(list, 0, newKeywords, keywords.length, list.length);
+//				
+//				keywords = newKeywords;
+//			}
 		}
 		
 		String imageName = getAttribute("language>image");
@@ -193,7 +193,14 @@ public class Language
 		
 		if (items != null)
 		{
-			XMLItem item = items[0];
+			int index = 0;
+			
+			if (params.length > 2)
+			{
+				index = Integer.valueOf(params[2]);
+			}
+			
+			XMLItem item = items[index];
 			
 			if (item != null)
 			{
@@ -204,7 +211,7 @@ public class Language
 		return null;
 	}
 	
-	public String[] getKeywords()
+	public String[][] getKeywords()
 	{
 		return keywords;
 	}
