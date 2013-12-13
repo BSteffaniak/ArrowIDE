@@ -199,7 +199,7 @@ public class TabMenu
 				{
 					CTabItem secondItem = tabFolder.getItem(new Point(event.x, event.y));
 					
-					if (firstItem.equals(secondItem))
+					if (firstItem != null && firstItem.equals(secondItem))
 					{
 						tabSelected(event, false);
 					}
